@@ -180,7 +180,7 @@ main_frame.grid_propagate(False)
 menu_heading = Label(main_frame, text='Welcome to Deluxifier', 
         font=f_heading, bg=COLORS['BG'])
 menu_subhead = Label(main_frame, 
-        text='The community-supported MRDX world converter', bg=COLORS['BG'])
+        text='The community-supported MR Deluxe world converter', bg=COLORS['BG'])
 
 menu_btns = [
     Button(main_frame, text='Convert one world',
