@@ -14,7 +14,7 @@ This is a Python program designed to convert MRoyale Legacy worlds to the update
 
 There are two main ways to run this program:
 
-1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python and the “pillow” module. If you don’t know how to do either of these things or you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
+1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python. If you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
 2. Online with Replit. This method is a little clunkier but it’s more beginner-friendly and supports basically any device, including Windows, Mac, Linux, Chromebooks, Android, and iOS. Link: https://replit.com/@WaluigiRoyale/Deluxifier
 
 ## ⚠️ WARNING - HEALTH AND SAFETY
