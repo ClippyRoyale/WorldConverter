@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 1.0.0
+Version 1.1.0
 
 Copyright © MMXXII clippy#4722
 
@@ -44,15 +44,15 @@ Version 0.2 (Oct. 2, 2022):
   + Jacob
 
 Version 0.2.1 (Oct. 2, 2022):
-  * Spinies are no longer deleted when converting
+  + Spinies are no longer deleted when converting
       * They got added back into Deluxe
 
 Version 0.2.2 (Oct. 15, 2022):
-  * Buzzy beetles are no longer deleted when converting
+  + Buzzy beetles are no longer deleted when converting
       * They got added back into Deluxe
 
 Version 0.3 (Oct. 16, 2022):
-  * Assets file is no longer deleted when converting
+  + Assets file is no longer deleted when converting
       * Side effect of fixing animation bugs
   + Add fallback assets if the world never had assets URL to begin with
     (e.g. if it's a remake world)
@@ -104,6 +104,18 @@ Version 1.0.0 (Dec. 16, 2022):
   * While the program itself is stable, it should still be treated as a
     public beta because Deluxe isn't out yet.
 
+Version 1.1.0 (Dec. 20, 2022):
+  + Converter now detects worlds already in Deluxe format
+      * This used to make the converter crash, but now it just refuses to
+        convert Deluxe worlds
+  + Converts all "type" data to "game"
+      * This makes converted lobbies playable
+  + Supports new Deluxe tile defs:
+      * 10: Solid Ice
+      * 11: Note Block
+      * 12: Item Note Block
+      * 13: Ice -> Tile
+
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
@@ -118,7 +130,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '1.0.0 beta'
+VERSION = '1.1.0 beta'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -389,6 +401,10 @@ VALID_TILES = {
     5: ('air damage', 0b10000), # was semisolid in Remake/Legacy
     6: ('semisolid', 0b10000), # was semisolid weak in Remake/Legacy
     7: ('water', 0b11110),
+    10: ('solid ice', 0b11100),
+    11: ('note block', 0b11100), # called "pop block" in Remake but works same
+    12: ('item note block', 0b11000), # conveyor in Remake (custom levels only)
+    13: ('ice -> object', 0b10000), # was ice -> tile in Legacy
     17: ('item block', 0b11111),
     18: ('coin block', 0b11111),
     19: ('coin block multi', 0b11111),
@@ -419,25 +435,26 @@ VALID_TILES = {
 # If is_fallback is False, the tile just has a different ID in Deluxe.
 CONVERT_TILES = {
     # Supported but under a new ID
+    # Make sure the new ID has an entry in VALID_TILES!
     5: ('semisolid', 6, False),
     15: ('air damage', 5, False), # LEGACY ONLY
+    16: ('ice -> object', 13, False),
+        # fireball turns ice into object id specified in extra data
 
     # Unsupported, to replace with fallbacks
     # 5 moved
     6: ('semisolid weak', 6, True), 
-        # Confirmed as REMOVED IN DELUXE: was semisolid if Small; air if Super
+        # Confirmed REMOVED IN DELUXE: was semisolid if Small; air if Super
     8: ('water surface', 7, True), # pushes you down?
     9: ('water current', 7, True), # pushes you left/right
-    10: ('solid ice', 1, True),
-    11: ('note block', 1, True),
-    12: ('item note block OR conveyor block', 17, True), 
-        # LEGACY: item note block; REMAKE: conveyor (custom levels only)
-    13: ('solid ice into tile', 1, True), 
-        # fireball turns ice into tile def specified in extra data
+    13: ('ice -> tile', 13, True), 
+        # Confirmed REMOVED IN DELUXE
+        # fireball turned ice into tile def specified in extra data
+        # Turning this into IceObject without updating extra data may cause
+        # bugs in-game... we'll see
     14: ('flip block', 3, True), # LEGACY ONLY
     # 15 moved
-    16: ('solid ice into object', 1, True),
-        # fireball turns ice into object id specified in extra data
+    # 16 moved
     23: ('semisolid ice', 1, True), # LEGACY ONLY
     26: ('item block progressive invisible', 21, True), # LEGACY ONLY
     40: ('checkpoint (legacy beta)', 40, True), # LEGACY ONLY (unused)
@@ -456,13 +473,16 @@ convert_fail = False
 # Convert 1 world file, and return string containing all converter warnings
 def convert(open_path: str, save_path: str):
     global convert_fail
+    convert_fail = False # Wipe away previous failed conversions
+    removed_layers = False # We'll add a warning at the end if layers were removed
     warnings = ''
 
     if open_path == save_path:
-        status_fail()
-        dialog('Error', 'For your safety, this program does not allow you to \
-overwrite your existing world files. Please try a different file path.', None,
-                None, 'Okay', menu)
+        convert_fail = True
+        error_msg = 'For your safety, this program does not allow you to \
+overwrite your existing world files. Please try a different file path.\n%s\n'\
+                % open_path
+        return error_msg
 
     try:
         # Open and read the old world file
@@ -496,10 +516,23 @@ Are you sure it’s a world?\n%s\n''' % open_path
 
     # Open the save path for writing. 
     # If no file exists at the given path, it will be created.
-    # If one does, it will be wiped.
-    write_file = open(save_path, 'w')
+    # No overwriting yet because if the user is saving over an existing level
+    # and the program crashes, we don't want the user to lose previous progress
+    write_file = open(save_path, 'a')
 
     try:
+        # First, make sure the level isn't already in Deluxe format.
+        # 1.  Deluxe doesn't have layers yet so check for those first.
+        #     (This prevents errors in step 2.)
+        # 2.  The main giveaway is that the tiles are stored as lists, 
+        #     not 32-bit integers.
+        if 'layers' not in content['world'][0]['zone'][0] and \
+                type(content['world'][0]['zone'][0]['data'][0][0]) == list:
+            convert_fail = True
+            error_msg = '''The selected file appears to already be in Deluxe \
+format.\n%s\n''' % open_path
+            return error_msg
+        
         # Add extra effects sprite sheet that's not in Legacy or Remake
         content['resource'].append({"id":"effects",
                 "src":"img/game/smb_effects.png"})
@@ -507,15 +540,18 @@ Are you sure it’s a world?\n%s\n''' % open_path
         # Delete world data that isn't in Deluxe
         if 'vertical' in content:
             del content['vertical']
-            warnings += 'This world is vertical. Vertical worlds are not \
-supported in Deluxe and may be difficult or impossible to play. They are also \
-known to the state of California to cause anticheat false positives.'
         if 'shortname' in content:
             del content['shortname']
         if 'musicOverridePath' in content:
             del content['musicOverridePath']
         if 'soundOverridePath' in content:
             del content['soundOverridePath']
+
+        # Turn lobbies into regular worlds so they don't crash the game
+        content['type'] = 'game'
+        # Any valid level should have a type, so no existence check needed.
+        # If the level is missing a type, it will throw a KeyError, which will
+        # make the program say the level is corrupted
 
         # Add full URL for Legacy assets
         if 'assets' in content:
@@ -529,7 +565,7 @@ content['assets']
             content['assets'] = \
 "https://raw.githubusercontent.com/mroyale/assets/legacy/assets/assets.json"
 
-        # Convert the sprites
+        # Convert map & obj sheets
         for index, item in enumerate(content['resource']):
             # Convert relative map paths to the final Legacy map
             # because the Deluxe sheets are different
@@ -614,6 +650,11 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                                             [tile_sprite, tile_bump, tile_depth,
                                             tile_def, tile_extra]
 
+                            # Warn if deleting layers (other than layer 0)
+                            if len(content['world'][level_i]
+                                    ['zone'][zone_i]['layers']) > 1:
+                                removed_layers = True
+
                             # Delete the layers then get out
                             # Comment out the next line if layers come back
                             del content['world'][level_i]['zone'][zone_i]\
@@ -646,12 +687,19 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
 Are you sure it’s a world?\n%s\n''' % open_path
         return error_msg
 
-    # Overwrite the file
+    # Open the file for real and wipe it
+    write_file = open(save_path, 'w')
+    # Save the file's new contents
     json.dump(content, write_file, separators=(',',':'))
-    # Close the file to prevent bugs
+    # Close the file to prevent bugs that occur in large levels
     write_file.close()
 
     warnings += 'YOUR CONVERTED WORLD HAS BEEN SAVED TO:\n' + save_path + '\n\n'
+
+    # Warn if layers were removed (no IDs)
+    if removed_layers:
+        warnings += 'Removed one or more layers\n'
+
     # Report the IDs of incompatible objects that were removed
     if removed_objects:
         warnings += 'Removed incompatible objects with the following IDs: '
@@ -686,7 +734,7 @@ def convert_file():
     open_path = filedialog.askopenfilename(
         title='Select a world file to convert', 
         # filetypes=[('MR World JSON', '*.json *.txt *.game')],
-        initialdir='../')
+        initialdir='./')
     # If script file path is still empty, user cancelled, back to menu
     if open_path == '':
         menu()
@@ -695,7 +743,7 @@ def convert_file():
     save_path = filedialog.asksaveasfilename(\
         title='Select a path to save to', defaultextension='.json',
         filetypes=[('MR World JSON', '*.json *.txt *.game')],
-        initialdir='../')
+        initialdir='./')
     # If save_path is still empty, user cancelled, back to menu
     if save_path == '':
         main()
@@ -730,7 +778,7 @@ def convert_folder():
 
     open_dir = filedialog.askdirectory(
         title='Select a folder. All worlds in the folder will be converted.',
-        initialdir='../')
+        initialdir='./')
     # If script file path is still empty, user cancelled, back to menu
     if open_dir == '':
         menu()
@@ -853,7 +901,7 @@ def menu():
 
 def warnings_bugs():
     dialog('⚠️ WARNING - HEALTH AND SAFETY', 
-        '''Playing converted worlds may get you banned from the game!
+        '''Playing converted worlds may get you banned from MR Deluxe!
 This appears to be a false positive in the game's anticheat.
 This bug is known to be triggered by converting the Royale City world.
 It may affect other worlds with vertical scrolling or Remake-only features.
@@ -883,7 +931,7 @@ def exit_app():
 
 #### MAIN PROGRAM START ####
 try:
-    # window.report_callback_exception = crash
+    window.report_callback_exception = crash
     
     # Test if we're running on replit
     if os.path.isdir("/home/runner") == True:
@@ -917,3 +965,5 @@ into the list of files in the left sidebar.''')
 except Exception as e:
     ei = sys.exc_info()
     crash(None, ei[1])
+
+# 2022-12-20, 14:57 EST
