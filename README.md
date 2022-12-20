@@ -20,7 +20,7 @@ There are two main ways to run this program:
 ## ⚠️ WARNING - HEALTH AND SAFETY
 Playing converted worlds may get you banned from MR Deluxe! This appears to be a false positive in the game's anticheat. This bug is known to be triggered by converting the Royale City world. It may affect other worlds with vertical scrolling or Remake-only features. I am not responsible if this program lands you in jail!!!
 
-Also: MR Deluxe is in closed alpha. The world format may change at any time. Don't delete your old world files (even after the game is out).
+Also: MR Deluxe is in closed alpha. As such, while I am reasonably confident in the stability of the converter at this point, I’m still calling this a public beta. The world format may change at any time. Don't delete your old world files (even after the game is out).
 
 ## Other Known Bugs
 - MRDX will not load music in converted worlds
