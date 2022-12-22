@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 1.1.0
+Version 1.2.0
 
 Copyright © MMXXII clippy#4722
 
@@ -116,10 +116,13 @@ Version 1.1.0 (Dec. 20, 2022):
       * 12: Item Note Block
       * 13: Ice -> Tile
 
+Version 1.2.0 (Dec. 21, 2022): “The Layers Update”
+  + Converter properly handles layers (which are now supported in Deluxe)
+
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
-import codecs, json, copy, sys, os
+import codecs, json, sys, os
 
 from time import time
 from glob import glob
@@ -130,7 +133,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '1.1.0 beta'
+VERSION = '1.2.0 beta'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -474,7 +477,6 @@ convert_fail = False
 def convert(open_path: str, save_path: str):
     global convert_fail
     convert_fail = False # Wipe away previous failed conversions
-    removed_layers = False # We'll add a warning at the end if layers were removed
     warnings = ''
 
     if open_path == save_path:
@@ -521,13 +523,22 @@ Are you sure it’s a world?\n%s\n''' % open_path
     write_file = open(save_path, 'a')
 
     try:
-        # First, make sure the level isn't already in Deluxe format.
-        # 1.  Deluxe doesn't have layers yet so check for those first.
-        #     (This prevents errors in step 2.)
-        # 2.  The main giveaway is that the tiles are stored as lists, 
-        #     not 32-bit integers.
-        if 'layers' not in content['world'][0]['zone'][0] and \
-                type(content['world'][0]['zone'][0]['data'][0][0]) == list:
+        # First, make sure the world isn't already in Deluxe format.
+        # The main giveaway is that the tiles are stored as lists, 
+        # not 32-bit integers. 
+
+        dx_cond = False
+        # To prevent errors, do a different Deluxe check based on whether the
+        # loaded world has layers. If dx_cond is true, the world is already
+        # in Deluxe format.
+        if 'layers' in content['world'][0]['zone'][0]:
+            dx_cond = type(content['world'][0]['zone'][0]['layers'][0]\
+                    ['data'][0][0]) == list
+        else:
+            dx_cond = type(content['world'][0]['zone'][0]['data'][0][0]) == list
+
+        # Apply the appropriate Deluxe conditional and block conversion if True
+        if dx_cond:
             convert_fail = True
             error_msg = '''The selected file appears to already be in Deluxe \
 format.\n%s\n''' % open_path
@@ -619,47 +630,32 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                 if 'layers' in zone:
                     # Loop thru the layers
                     for layer_i, layer in enumerate(zone['layers']):
-                        if layer['z'] == 0:
-                            # Deep-copy layer data
-                            content['world'][level_i]['zone'][zone_i]['data'] =\
-                                    copy.deepcopy(content['world'][level_i]
-                                        ['zone'][zone_i]['layers'][layer_i]\
-                                        ['data'])
+                        # Loop thru the rows
+                        for row_i, row in enumerate(layer['data']):
+                            # Loop thru tiles by column
+                            for tile_i, tile in enumerate(row):
+                                # Separate out the data in the tile format
+                                tile_sprite = tile % 2**11
+                                tile_bump = tile // 2**11 % 2**4
+                                tile_depth = tile // 2**15 % 2
+                                tile_def = tile // 2**16 % 2**8
+                                tile_extra = tile // 2**24 % 2**8
 
-                            # Loop thru the rows
-                            for row_i, row in enumerate(layer['data']):
-                                # Loop thru tiles by column
-                                for tile_i, tile in enumerate(row):
-                                    # Separate out the data in the tile format
-                                    tile_sprite = tile % 2**11
-                                    tile_bump = tile // 2**11 % 2**4
-                                    tile_depth = tile // 2**15 % 2
-                                    tile_def = tile // 2**16 % 2**8
-                                    tile_extra = tile // 2**24 % 2**8
+                                # Replace incompatible tile defs
+                                if tile_def in CONVERT_TILES:
+                                    if tile_def not in replaced_tiles:
+                                        replaced_tiles.append(tile_def)
+                                    tile_def = CONVERT_TILES[tile_def][1]
 
-                                    # Replace incompatible tile defs
-                                    if tile_def in CONVERT_TILES:
-                                        if tile_def not in replaced_tiles:
-                                            replaced_tiles.append(tile_def)
-                                        tile_def = CONVERT_TILES[tile_def][1]
-
-                                    # Overwrite the int tiledata with the new 
-                                    # list-based data
-                                    content['world'][level_i]['zone'][zone_i]\
-                                            ['data'][row_i][tile_i] = \
-                                            [tile_sprite, tile_bump, tile_depth,
-                                            tile_def, tile_extra]
-
-                            # Warn if deleting layers (other than layer 0)
-                            if len(content['world'][level_i]
-                                    ['zone'][zone_i]['layers']) > 1:
-                                removed_layers = True
-
-                            # Delete the layers then get out
-                            # Comment out the next line if layers come back
-                            del content['world'][level_i]['zone'][zone_i]\
-                                    ['layers']
-                            break
+                                # Overwrite the int tiledata with the new 
+                                # list-based data. This is the one part that's 
+                                # different when the world has levels.
+                                content['world'][level_i]['zone'][zone_i]\
+                                        ['layers'][layer_i]['data']\
+                                        [row_i][tile_i] = \
+                                    [tile_sprite, tile_bump, tile_depth,
+                                        tile_def, tile_extra]
+                        # Layers used to be deleted here
                 else:
                     for row_i, row in enumerate(zone['data']): # Loop thru rows
                         for tile_i, tile in enumerate(row): # Loop tiles by col
@@ -678,7 +674,8 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
 
                             # Overwrite the int tiledata w/ new list-based data
                             content['world'][level_i]['zone'][zone_i]['data']\
-                                    [row_i][tile_i] = [tile_sprite, tile_bump, 
+                                    [row_i][tile_i] = \
+                                [tile_sprite, tile_bump, 
                                     tile_depth, tile_def, tile_extra]
     except KeyError:
         # File is missing required fields
@@ -695,10 +692,6 @@ Are you sure it’s a world?\n%s\n''' % open_path
     write_file.close()
 
     warnings += 'YOUR CONVERTED WORLD HAS BEEN SAVED TO:\n' + save_path + '\n\n'
-
-    # Warn if layers were removed (no IDs)
-    if removed_layers:
-        warnings += 'Removed one or more layers\n'
 
     # Report the IDs of incompatible objects that were removed
     if removed_objects:
@@ -966,4 +959,5 @@ except Exception as e:
     ei = sys.exc_info()
     crash(None, ei[1])
 
-# 2022-12-20, 14:57 EST
+# TODO: 2022-12-20, 14:57 EST
+# TODO: Water hitbox workaround
