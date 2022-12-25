@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 1.2.0
+Version 1.3.0
 
 Copyright © MMXXII clippy#4722
 
@@ -119,6 +119,13 @@ Version 1.1.0 (Dec. 20, 2022):
 Version 1.2.0 (Dec. 21, 2022): “The Layers Update”
   + Converter properly handles layers (which are now supported in Deluxe)
 
+Version 1.3.0 (Dec. 25, 2022):
+  + Updates levels to account for new water hitboxes, so water areas are 
+    playable as intended (even if the conversion isn't 1:1)
+  - Removed checkpoints (they were either taken out of Deluxe or never added
+    in the first place)
+      * Thanks to Pyriel for helping me find this bug!
+
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
@@ -133,7 +140,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '1.2.0 beta'
+VERSION = '1.3.0 beta'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -460,7 +467,7 @@ CONVERT_TILES = {
     # 16 moved
     23: ('semisolid ice', 1, True), # LEGACY ONLY
     26: ('item block progressive invisible', 21, True), # LEGACY ONLY
-    40: ('checkpoint (legacy beta)', 40, True), # LEGACY ONLY (unused)
+    40: ('checkpoint (legacy beta)', 0, True), # LEGACY ONLY (unused)
     87: ('warp pipe single slow', 81, True), # LEGACY ONLY
     88: ('warp pipe single fast', 81, True), # LEGACY ONLY
     91: ('warp pipe up slow', 81, True), # LEGACY ONLY
@@ -655,6 +662,19 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                                         [row_i][tile_i] = \
                                     [tile_sprite, tile_bump, tile_depth,
                                         tile_def, tile_extra]
+
+                                # WATER HITBOX WORKAROUND
+                                #   (see extended notes in no-layers section)
+                                # Make sure we’re not in top row
+                                if (tile_def == 7 or tile_def == 8 or \
+                                        tile_def == 9) and row_i >= 1:
+                                    # Get data for the tile 1 row up
+                                    tile = content['world'][level_i]\
+                                            ['zone'][zone_i]['layers'][layer_i]\
+                                            ['data'][row_i-1][tile_i]
+                                    # If td-1 is air, change it to water
+                                    if (tile[3] == 0):
+                                        tile[3] = 7
                         # Layers used to be deleted here
                 else:
                     for row_i, row in enumerate(zone['data']): # Loop thru rows
@@ -677,6 +697,28 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                                     [row_i][tile_i] = \
                                 [tile_sprite, tile_bump, 
                                     tile_depth, tile_def, tile_extra]
+
+                            # WATER HITBOX WORKAROUND
+                            # The water hitboxes in Legacy (and probably Remake)
+                            # are infamously bad—they’re about a tile too tall.
+                            # Deluxe fixes them, but it means we have to change
+                            # on old worlds that were build with these
+                            # hitboxes in mind.
+                            # This will work because the row(s) above already
+                            # have their “final” data (in list format).
+                            # Make sure we’re not in top row
+                            if (tile_def == 7 or tile_def == 8 or \
+                                    tile_def == 9) and row_i >= 1:
+                                # Get data for the tile 1 row up/same col
+                                tile = content['world'][level_i]\
+                                        ['zone'][zone_i]['data'][row_i-1]\
+                                        [tile_i]
+                                # If td-1 is air, change it to water
+                                if (tile[3] == 0):
+                                    tile[3] = 7
+
+
+
     except KeyError:
         # File is missing required fields
         convert_fail = True
@@ -924,6 +966,8 @@ def exit_app():
 
 #### MAIN PROGRAM START ####
 try:
+    # Comment out during testing if you want crashes to be logged to the console
+    # instead of displaying a bomb dialog
     window.report_callback_exception = crash
     
     # Test if we're running on replit
@@ -960,4 +1004,3 @@ except Exception as e:
     crash(None, ei[1])
 
 # TODO: 2022-12-20, 14:57 EST
-# TODO: Water hitbox workaround
