@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 1.3.0
+Version 2.0.0
 
 Copyright © MMXXII clippy#4722
 
@@ -23,9 +23,9 @@ For a copy of the license, see <https://www.gnu.org/licenses/>.
 
 CHANGELOG:
 Version 0.0 (Sep. 1, 2022): Preliminary version; based on sample world files.
-    Converted worlds cannot be tested in-game yet.
+    Converted worlds cannot be used in-game yet.
 
-Version 0.1 (Sep. 30, 2022): Based on the latest private world 1 file.
+Version 0.1 (Sep. 30, 2022): Based on the newest private world 1 file.
   + Inserts default resources.effects (which wasn't in Legacy)
   + Deletes data only used in Legacy/Remake (e.g. layers, shortname)
   + Fixes relative resource URLs so they use Legacy sprites instead of
@@ -36,7 +36,7 @@ Version 0.2 (Oct. 2, 2022):
   + Deletes objects that Deluxe doesn't support
       * The converter should now produce playable conversions for all worlds,
         though some features may be missing from newer worlds. I haven't
-        tested it on every world yet, so please report any bugs/game crashes!
+        tried it on every world yet, so please report any bugs/game crashes!
   + Better warnings if you try to overwrite an existing file
       * Basically went back to how it was in v0.0 but with a major bug fixed
   * Convert ALL obj sheets to the Deluxe default, not just Legacy default objs
@@ -121,10 +121,13 @@ Version 1.2.0 (Dec. 21, 2022): “The Layers Update”
 
 Version 1.3.0 (Dec. 25, 2022):
   + Updates levels to account for new water hitboxes, so water areas are 
-    playable as intended (even if the conversion isn't 1:1)
+    playable as intended (even if the conversion isn’t 1:1)
   - Removed checkpoints (they were either taken out of Deluxe or never added
     in the first place)
       * Thanks to Pyriel for helping me find this bug!
+
+Version 2.0.0 (Jan. 8, 2023):
+  + Added experimental De-Deluxifier for converting Deluxe levels to Legacy
 
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
@@ -140,7 +143,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '1.3.0 beta'
+VERSION = '2.0.0 beta'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -209,7 +212,10 @@ menu_btns = [
             font=f_large, highlightbackground=COLORS['BG']),
     Button(main_frame, text='Convert every world in a folder',
             font=f_large, highlightbackground=COLORS['BG']),
-    Label(main_frame, bg=COLORS['BG']), # filler
+    Label(main_frame, text='Reverse Mode is OFF (converting to DELUXE format)',
+            bg=COLORS['BG']), # filler
+    Button(main_frame, text='Toggle Reverse Mode (BETA)', 
+            highlightbackground=COLORS['BG']),
     Button(main_frame, text='Warnings & Bugs', 
             highlightbackground=COLORS['BG']),
     Label(main_frame, bg=COLORS['BG']), # filler
@@ -338,58 +344,17 @@ def dialog(heading_text, msg_text, bottom_text, icon_name: None,
 
 #### END UI CODE ####
 
-# Tuple of every valid object ID in Deluxe
-VALID_OBJECTS = (
-    1, # player
-    16, # goombrat (DELUXE ONLY)
-    17, # goomba
-    18, # green koopa troopa/paratroopa
-    19, # red koopa troopa/paratroopa
-    21, # flying fish
-    22, # p. plant
-    23, # spiny (LEGACY/DELUXE ONLY)
-    24, # buzzy beetle (LEGACY/DELUXE ONLY)
-    25, # bowser
-    33, # fire bar
-    34, # lava bubble
-    35, # bill blaster
-    36, # bullet bill
-    49, # hammer bro
-    50, # fire bro (DELUXE ONLY)
-    81, # mushroom
-    82, # fire flower
-    83, # 1up
-    84, # star
-    85, # axe
-    86, # poison mushroom
-    97, # coin
-    145, # platform
-    146, # bus platform
-    149, # spring
-    161, # fireball projectile
-    162, # fire breath projectile
-    163, # hammer projectile
-    177, # flag
-    253, # text
-    254, # checkmark
-)
-# Dictionary of every object ID+name from Legacy/Remake that's NOT in Deluxe
-INCOMPATIBLE_OBJECTS = {
-    37 : 'Object Spawner', # REMAKE/LEGACY
-    100 : 'Gold Flower', # LEGACY (in Remake editor but unused)
-}
-removed_objects = [] # Object IDs removed from the world will go here
-
-# Compatibility contants
+# Compatibility constants (see below)
 DELUXE  = 0b10000
 LEGACY  = 0b01000
 REMAKE  = 0b00100
 CLASSIC = 0b00010
 INFERNO = 0b00001
 
-# Tile definitions that exist in Deluxe at the same ID as Legacy/Remake.
+# Dictionary of all objects in all MR versions.
 # Format:
 # id: (name, compatibility)
+#
 # compatibility is a binary number with bits in format <dlrci>, where:
 # - i for InfernoPlus (1.0.0 - 2.1.0), 
 #   last common ancestor of Deluxe + all others
@@ -402,6 +367,49 @@ INFERNO = 0b00001
 # - 0b11011 means it's compatible with everything but Remake
 # - Semisolid at ID 6 is only compatible with Deluxe (0b10000) because it had a
 #   different ID in Classic, Legacy, and Remake
+ALL_OBJECTS = {
+    1: ('player', 0b11111),
+    15: ('thwomp', 0b10000),
+    16: ('goombrat', 0b10000),
+    17: ('goomba', 0b11111),
+    18: ('green koopa', 0b11111),
+    19: ('red koopa', 0b11111),
+    21: ('flying fish', 0b11111),
+    22: ('piranha plant', 0b11111),
+    23: ('spiny', 0b11000),
+    24: ('buzzy beetle', 0b11000),
+    25: ('bowser', 0b11111),
+    33: ('fire bar', 0b11111),
+    34: ('lava bubble', 0b11111),
+    35: ('bill blaster', 0b11111),
+    36: ('bullet bill', 0b11111),
+    37: ('object spawner', 0b11110),
+    49: ('hammer bro', 0b11111),
+    50: ('fire bro', 0b10000),
+    81: ('mushroom', 0b11111),
+    82: ('fire flower', 0b11111),
+    83: ('1up', 0b11111),
+    84: ('star', 0b11111),
+    85: ('axe', 0b11111),
+    86: ('poison mushroom', 0b11111),
+    97: ('coin', 0b11111),
+    100: ('gold flower', 0b01000), 
+        # LEGACY ONLY, not in Deluxe, in Remake editor but unused
+    145: ('platform', 0b11111),
+    146: ('bus platform', 0b11111),
+    149: ('spring', 0b11111),
+    161: ('fireball projectile', 0b11111),
+    162: ('fire breath projectile', 0b11111),
+    163: ('hammer projectile', 0b11111),
+    177: ('flag', 0b11111),
+    253: ('text', 0b11111),
+    254: ('checkmark', 0b11111),
+}
+removed_objects = [] # Object IDs removed from the world will go here
+
+# Tile definitions that exist in Deluxe at the same ID as Legacy/Remake.
+# Format:
+# id: (name, compatibility)
 VALID_TILES = {
     0: ('air', 0b11111),
     1: ('solid', 0b11111),
@@ -439,8 +447,10 @@ VALID_TILES = {
     240: ('vote block', 0b11111),
     241: ('message block', 0b10000), # (DELUXE ONLY)
 }
+# Dictionary of tiles that need to be converted, either due to incompatibility
+# or because their ID was changed.
 # Format:
-# old_id: (old_name, new_id, is_fallback)
+# legacy_id: (legacy_name, deluxe_id, is_fallback)
 # If is_fallback is True, the conversion is a fallback to a different tile.
 # If is_fallback is False, the tile just has a different ID in Deluxe.
 CONVERT_TILES = {
@@ -478,9 +488,23 @@ CONVERT_TILES = {
 }
 replaced_tiles = []
 
+# Dictionary of REVERSE tile conversions for De-Deluxifier.
+# Anything in CONVERT_TILES that's not a fallback should be included here,
+# with key and value[0] reversed.
+# Format: 
+# deluxe_id: (legacy_id, legacy_name)
+REVERSE_CONVERT_TILES = {
+    6: (5, 'semisolid'),
+    5: (15, 'air damage'),
+    13: (16, 'ice -> object'),
+}
+
+# Misc. global booleans
+reverse_mode = False
 convert_fail = False
 
-# Convert 1 world file, and return string containing all converter warnings
+# Convert 1 world file from Legacy TO DELUXE, and return string 
+# containing all converter warnings
 def convert(open_path: str, save_path: str):
     global convert_fail
     convert_fail = False # Wipe away previous failed conversions
@@ -618,8 +642,12 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                     # STOP
                     if obj_i >= len(zone['obj']):
                         break
-
-                    if zone['obj'][obj_i]['type'] not in VALID_OBJECTS:
+                    
+                    # Object is incompatible if it's either:
+                    #   - Not in the list of all objects
+                    #   - In the list but not flagged as supported in Deluxe
+                    if zone['obj'][obj_i]['type'] not in ALL_OBJECTS or not \
+                            ALL_OBJECTS[zone['obj'][obj_i]['type']][1] & DELUXE:
                         # Log the removed object if it's not already in the
                         # removed objects list
                         if zone['obj'][obj_i]['type'] not in removed_objects:
@@ -656,7 +684,7 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
 
                                 # Overwrite the int tiledata with the new 
                                 # list-based data. This is the one part that's 
-                                # different when the world has levels.
+                                # different when the world has layers.
                                 content['world'][level_i]['zone'][zone_i]\
                                         ['layers'][layer_i]['data']\
                                         [row_i][tile_i] = \
@@ -717,8 +745,6 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                                 if (tile[3] == 0):
                                     tile[3] = 7
 
-
-
     except KeyError:
         # File is missing required fields
         convert_fail = True
@@ -741,7 +767,7 @@ Are you sure it’s a world?\n%s\n''' % open_path
         for index, item in enumerate(removed_objects):
             # Print the name of the incompatible object if available
             try:
-                warnings += '%i (%s)' % (item, INCOMPATIBLE_OBJECTS[item])
+                warnings += '%i (%s)' % (item, ALL_OBJECTS[item][0])
             except KeyError:
                 warnings += str(item)
             # Add comma if we aren't at the end of the removed objects list
@@ -757,6 +783,303 @@ Are you sure it’s a world?\n%s\n''' % open_path
 replaced with %i (%s)\n' % (i, CONVERT_TILES[i][0], CONVERT_TILES[i][1],
                         VALID_TILES[CONVERT_TILES[i][1]][0])
             else: # tiles with different IDs in different versions
+                warnings += 'Tile definition %i (%s) updated to %i\n' % \
+                        (i, CONVERT_TILES[i][0], CONVERT_TILES[i][1])
+
+    return warnings
+
+# Reverse convert 1 world file from Deluxe TO LEGACY, and return string 
+# containing all converter warnings
+def reverse_convert(open_path: str, save_path: str):
+    global convert_fail
+    convert_fail = False # Wipe away previous failed conversions
+    warnings = ''
+
+    if open_path == save_path:
+        convert_fail = True
+        error_msg = 'For your safety, this program does not allow you to \
+overwrite your existing world files. Please try a different file path.\n%s\n'\
+                % open_path
+        return error_msg
+
+    try:
+        # Open and read the old world file
+        read_file = codecs.open(open_path, 'r', 'utf-8-sig')
+        content = json.load(read_file)
+        read_file.close()
+    except FileNotFoundError:
+        # Not sure if we can get here now that the GUI handles file opening,
+        # but this can't hurt
+        convert_fail = True
+        error_msg = 'The selected file does not exist.\n%s\n' \
+                    % open_path
+        return error_msg
+    except IsADirectoryError:
+        convert_fail = True
+        error_msg = 'The selected file is a folder.\n%s\n' \
+                    % open_path
+        return error_msg
+    except UnicodeDecodeError:
+        # File is an image, movie, or other binary
+        convert_fail = True
+        error_msg = '''The selected file is a binary file such as an image, \
+song, movie, or app, and could not be read.\n%s\n''' % open_path
+        return error_msg
+    except json.decoder.JSONDecodeError:
+        # File is not JSON
+        convert_fail = True
+        error_msg = '''The selected text file could not be read.
+Are you sure it’s a world?\n%s\n''' % open_path
+        return error_msg
+
+    # Open the save path for writing. 
+    # If no file exists at the given path, it will be created.
+    # No overwriting yet because if the user is saving over an existing level
+    # and the program crashes, we don't want the user to lose previous progress
+    write_file = open(save_path, 'a')
+
+    try:
+        # First, make sure the world isn't already in Legacy format.
+        # The main giveaway: the tiles are stored as integers not lists.
+
+        l_cond = False
+        # To prevent errors, do a different Deluxe check based on whether the
+        # loaded world has layers. If dx_cond is true, the world is already
+        # in Deluxe format.
+        if 'layers' in content['world'][0]['zone'][0]:
+            l_cond = type(content['world'][0]['zone'][0]['layers'][0]\
+                    ['data'][0][0]) == int
+        else:
+            l_cond = type(content['world'][0]['zone'][0]['data'][0][0]) == int
+
+        # Apply the appropriate Deluxe conditional and block conversion if True
+        if l_cond:
+            convert_fail = True
+            error_msg = '''The selected file appears to already be in Legacy \
+format.\n%s\n''' % open_path
+            return error_msg
+        
+        # # Add extra effects sprite sheet that's not in Legacy or Remake
+        # content['resource'].append({"id":"effects",
+        #         "src":"img/game/smb_effects.png"})
+
+        # # Delete world data that isn't in Deluxe
+        # if 'vertical' in content:
+        #     del content['vertical']
+        # if 'shortname' in content:
+        #     del content['shortname']
+        # if 'musicOverridePath' in content:
+        #     del content['musicOverridePath']
+        # if 'soundOverridePath' in content:
+        #     del content['soundOverridePath']
+
+        # Turn lobbies into regular worlds so they don't crash the game
+        content['type'] = 'game'
+        # Any valid level should have a type, so no existence check needed.
+        # If the level is missing a type, it will throw a KeyError, which will
+        # make the program say the level is corrupted
+
+        # Add shortname and mode to make world pass validation
+        content['shortname'] = 'DXIFY'
+        content['mode'] = 'royale'
+
+#         # Add full URL for Legacy assets
+#         if 'assets' in content:
+#             content['assets'] = \
+# "https://raw.githubusercontent.com/mroyale/assets/legacy/assets/" + \
+# content['assets']
+#         # If the world doesn't specify assets (i.e. Classic & Remake worlds), 
+#         # use Legacy assets because they're a superset of Classic/Remake's 
+#         # hardcoded animations
+#         else:
+#             content['assets'] = \
+# "https://raw.githubusercontent.com/mroyale/assets/legacy/assets/assets.json"
+
+        # Convert map & obj sheets
+        for index, item in enumerate(content['resource']):
+            # Convert relative smb_map path to the current Deluxe map
+            # because it's different from Legacy.
+            if item['id'] == 'map' and item['src'] == 'img/game/smb_map.png':
+                content['resource'][index]['src'] = 'https://github.com/\
+WaluigiRoyale/MR-Converter-3/raw/main/assets/deluxe/smb_map.png'
+                # Since Deluxe isn't publicly available right now, I'll need
+                # to use my own Github upload of the Deluxe map from the
+                # skin converter
+                # Other map files will be added later.
+
+        for level_i, level in enumerate(content['world']): # Loop thru levels
+            for zone_i, zone in enumerate(level['zone']): # Loop thru zones
+                # Delete world data that isn't in Deluxe
+                if 'winmusic' in content['world'][level_i]['zone'][zone_i]:
+                    del content['world'][level_i]['zone'][zone_i]\
+                            ['winmusic']
+                if 'victorymusic' in content['world'][level_i]['zone'][zone_i]:
+                    del content['world'][level_i]['zone'][zone_i]\
+                            ['victorymusic']
+                if 'levelendoff' in content['world'][level_i]['zone'][zone_i]:
+                    del content['world'][level_i]['zone'][zone_i]\
+                            ['levelendoff']
+                
+                # Check for unsupported objects and remove them
+                # Need to use a while loop because length of obj list may
+                # change while program runs
+                obj_i = 0 # START
+                while True:
+                    # STOP
+                    if obj_i >= len(zone['obj']):
+                        break
+
+                    # Object is incompatible if it's either:
+                    #   - Not in the list of all objects
+                    #   - In the list but not flagged as supported in Deluxe
+                    if zone['obj'][obj_i]['type'] not in ALL_OBJECTS or not \
+                            ALL_OBJECTS[zone['obj'][obj_i]['type']][1] & LEGACY:
+                        # Log the removed object if it's not already in the
+                        # removed objects list
+                        if zone['obj'][obj_i]['type'] not in removed_objects:
+                            removed_objects.append(zone['obj'][obj_i]['type'])
+                        # Actually remove the object from the world
+                        del content['world'][level_i]['zone'][zone_i]\
+                                ['obj'][obj_i]
+                        # Reduce the loop variable to account for the removal
+                        obj_i -= 1
+
+                    # STEP
+                    obj_i += 1
+
+                # Two different conversion options based on if level has layers
+                if 'layers' in zone:
+                    # Loop thru the layers
+                    for layer_i, layer in enumerate(zone['layers']):
+                        # Loop thru the rows
+                        for row_i, row in enumerate(layer['data']):
+                            # Loop thru tiles by column
+                            for tile_i, tile in enumerate(row):
+                                # If the tile is still an int and not a list
+                                # (for whatever reason), leave it
+                                if type(tile) != list:
+                                    continue
+
+                                # Separate out the data in the tile format
+                                try:
+                                    tile_sprite = int(tile[0])
+                                except ValueError:
+                                    tile_sprite = 0
+                                try:
+                                    tile_bump = int(tile[1])
+                                except ValueError:
+                                    tile_bump = 0
+                                try:
+                                    tile_depth = int(tile[2])
+                                except ValueError:
+                                    tile_depth = 0
+                                try:
+                                    tile_def = int(tile[3])
+                                except ValueError:
+                                    tile_def = 0
+                                try:
+                                    tile_extra = int(tile[4])
+                                except ValueError:
+                                    tile_extra = 0
+
+                                # Replace incompatible tile defs
+                                if tile_def in REVERSE_CONVERT_TILES:
+                                    if tile_def not in replaced_tiles:
+                                        replaced_tiles.append(tile_def)
+                                    tile_def=REVERSE_CONVERT_TILES[tile_def][1]
+
+                                # Overwrite the list tiledata with the new 
+                                # int32-based data. This is the one part that's 
+                                # different when the world has layers.
+                                content['world'][level_i]['zone'][zone_i]\
+                                        ['layers'][layer_i]['data']\
+                                        [row_i][tile_i] = \
+                                    tile_sprite + tile_bump*(2**11) + \
+                                    tile_depth*(2**15) + tile_def*(2**16) + \
+                                    tile_extra*(2**24)
+                else:
+                    for row_i, row in enumerate(zone['data']): # Loop thru rows
+                        for tile_i, tile in enumerate(row): # Loop tiles by col
+                            # If the tile is still an int and not a list
+                            # (for whatever reason), leave it
+                            if type(tile) != list:
+                                continue
+
+                            # Separate out the data in the tile format
+                            try:
+                                tile_sprite = int(tile[0])
+                            except ValueError:
+                                tile_sprite = 0
+                            try:
+                                tile_bump = int(tile[1])
+                            except ValueError:
+                                tile_bump = 0
+                            try:
+                                tile_depth = int(tile[2])
+                            except ValueError:
+                                tile_depth = 0
+                            try:
+                                tile_def = int(tile[3])
+                            except ValueError:
+                                tile_def = 0
+                            try:
+                                tile_extra = int(tile[4])
+                            except ValueError:
+                                tile_extra = 0
+
+                            # Replace incompatible tile defs
+                            if tile_def in REVERSE_CONVERT_TILES:
+                                if tile_def not in replaced_tiles:
+                                    replaced_tiles.append(tile_def)
+                                tile_def=REVERSE_CONVERT_TILES[tile_def][1]
+
+                            # Overwrite the list tiledata with the new 
+                            # int32-based data
+                            content['world'][level_i]['zone'][zone_i]['data']\
+                                    [row_i][tile_i] = \
+                                tile_sprite + tile_bump*(2**11) + \
+                                tile_depth*(2**15) + tile_def*(2**16) + \
+                                tile_extra*(2**24)
+
+    except KeyError:
+        # File is missing required fields
+        convert_fail = True
+        error_msg = '''The selected file appears to be corrupted.
+Are you sure it’s a world?\n%s\n''' % open_path
+        return error_msg
+
+    # Open the file for real and wipe it
+    write_file = open(save_path, 'w')
+    # Save the file's new contents
+    json.dump(content, write_file, separators=(',',':'))
+    # Close the file to prevent bugs that occur in large levels
+    write_file.close()
+
+    warnings += 'YOUR REVERSE-CONVERTED WORLD HAS BEEN SAVED TO:\n' + \
+            save_path + '\n\n'
+
+    # # Report the IDs of incompatible objects that were removed
+    # if removed_objects:
+    #     warnings += 'Removed incompatible objects with the following IDs: '
+    #     for index, item in enumerate(removed_objects):
+    #         # Print the name of the incompatible object if available
+    #         try:
+    #             warnings += '%i (%s)' % (item, INCOMPATIBLE_OBJECTS[item])
+    #         except KeyError:
+    #             warnings += str(item)
+    #         # Add comma if we aren't at the end of the removed objects list
+    #         if index < (len(removed_objects) - 1):
+    #             warnings += ', '
+    #     warnings += '\n'
+
+    # Report the IDs of incompatible tiles that were replaced
+    if replaced_tiles:
+        for i in replaced_tiles:
+#             if CONVERT_TILES[i][2]: # if fallback
+#                 warnings += 'Incompatible tile definition %i (%s) \
+# replaced with %i (%s)\n' % (i, CONVERT_TILES[i][0], CONVERT_TILES[i][1],
+#                         VALID_TILES[CONVERT_TILES[i][1]][0])
+#             else: # tiles with different IDs in different versions
                 warnings += 'Tile definition %i (%s) updated to %i\n' % \
                         (i, CONVERT_TILES[i][0], CONVERT_TILES[i][1])
 
@@ -789,7 +1112,10 @@ def convert_file():
     # Start the conversion timer here!
     t1 = time()
 
-    warnings = convert(open_path, save_path)
+    if reverse_mode:
+        warnings = reverse_convert(open_path, save_path)
+    else:
+        warnings = convert(open_path, save_path)
 
     # Stop the timer
     t2 = time()
@@ -864,7 +1190,11 @@ def convert_folder():
             time_since_refresh = 0
 
         filename = item.split('/')[-1] # Get just the filename w/o the path
-        warnings += convert(item, save_dir + '/' + filename) + '\n\n'
+
+        if reverse_mode:
+            warnings += reverse_convert(item, save_dir+'/'+filename) + '\n\n'
+        else:
+            warnings += convert(item, save_dir + '/' + filename) + '\n\n'
 
     # Save all warnings to a log file in the "converted" folder
     log_file = open(save_dir + '/_WARNINGS.LOG', 'a')
@@ -925,14 +1255,26 @@ def menu():
             lambda _: convert_folder())
 
     menu_btns[3].bind('<Button-1>', 
+            lambda _: toggle_reverse())
+    menu_btns[4].bind('<Button-1>', 
             lambda _: warnings_bugs())
 
-    menu_btns[5].bind('<Button-1>', 
+    menu_btns[6].bind('<Button-1>', 
             lambda _: exit_app())
 
     window.update()
 
     window.mainloop()
+
+def toggle_reverse():
+    global reverse_mode
+    reverse_mode = not reverse_mode
+    if reverse_mode:
+        menu_btns[2].config(text=\
+'Reverse Mode is ON (converting to LEGACY format)')
+    else:
+        menu_btns[2].config(text=\
+'Reverse Mode is OFF (converting to DELUXE format)')
 
 def warnings_bugs():
     dialog('⚠️ WARNING - HEALTH AND SAFETY', 
@@ -946,6 +1288,9 @@ OTHER KNOWN BUGS:
 - MRDX will not load music in converted worlds
 - All worlds use the Deluxe obj sheet
 - assets.json animations will play at 2× speed since the game is now 60fps
+
+Reverse Mode is in beta, and I make no guarantees that any worlds
+converted with it will work.
 ''', None, None,
         'Okay', menu)
 
@@ -966,11 +1311,11 @@ def exit_app():
 
 #### MAIN PROGRAM START ####
 try:
-    # Comment out during testing if you want crashes to be logged to the console
-    # instead of displaying a bomb dialog
+    # Comment out during development if you want crashes to be logged to the
+    # console instead of displaying a bomb dialog
     window.report_callback_exception = crash
     
-    # Test if we're running on replit
+    # Determine if we're running on replit
     if os.path.isdir("/home/runner") == True:
         import tkinter.messagebox as messagebox
 
