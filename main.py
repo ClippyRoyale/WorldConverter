@@ -1,11 +1,11 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 2.0.0
+Version 2.1.0
 
-Copyright © MMXXII clippy#4722
+Copyright © 2022–2023 clippy#4722
 
 WARNING:
-MR Deluxe is in closed alpha. The world format may change at any time.
+MR Deluxe is in closed beta. The world format may change at any time.
 Don't delete your old world files (even after the game is out).
 
 LICENSE INFO:
@@ -129,27 +129,36 @@ Version 1.3.0 (Dec. 25, 2022):
 Version 2.0.0 (Jan. 8, 2023):
   + Added experimental De-Deluxifier for converting Deluxe levels to Legacy
 
+Version 2.1.0 (Feb. 3, 2023):
+  + App icon
+  + UI improvements from Skin Converter
+  + Supports new Deluxe objects: Cheep Cheep (underwater), Blooper, and ???????
+  * Now requires Pillow to display icons 
+      * Offline users: use "pip3 install pillow" in your terminal
+
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
 import codecs, json, sys, os
-
+import PIL.ImageTk
 from time import time
 from glob import glob
-
 from tkinter import *
 import tkinter.font as tkfont
 import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '2.0.0 beta'
+VERSION = '2.1.0 beta'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
 window.geometry('640x320')
-# UNCOMMENT THIS LINE ON REPL.IT BUILDS OR TO RUN THE APP IN FULLSCREEN
+# UNCOMMENT THIS LINE ON REPLIT BUILDS OR TO RUN THE APP IN FULLSCREEN
 window.attributes('-fullscreen', True)
+
+app_icon = PhotoImage(file='ui/icon.png')
+window.iconphoto(False, app_icon)
 
 COLORS = {
     'red': '#c00000',
@@ -222,6 +231,22 @@ menu_btns = [
     Button(main_frame, text='Exit', highlightbackground=COLORS['BG']),
 ]
 
+back_btn = Button(side_frame, text='Back to Menu', 
+        highlightbackground=COLORS['BG'])
+
+icons = {
+    'info': \
+        PIL.ImageTk.PhotoImage(PIL.Image.open('ui/info.png')),
+    'question': \
+        PIL.ImageTk.PhotoImage(PIL.Image.open('ui/question.png')),
+    'warning': \
+        PIL.ImageTk.PhotoImage(PIL.Image.open('ui/warning.png')),
+    'error': \
+        PIL.ImageTk.PhotoImage(PIL.Image.open('ui/denied.png')),
+    'done': \
+        PIL.ImageTk.PhotoImage(PIL.Image.open('ui/accepted.png')),
+}
+
 #### BEGIN UI FUNCTIONS ####
 
 # Clear the main content frame -- remove text, buttons, etc.
@@ -288,48 +313,69 @@ def update_subhead(subhead, current, target):
 
 # Generic function to display a dialog box in the window, 
 # with text and buttons.
-# The code here is copied dialog() from my Skin Converter.
+# The code here is copied from the Skin Converter's dialog() function.
 # Deluxifier doesn’t use icons, to reduce the number of dependencies, and
 # because it has fewer dialog boxes. However, the 
-def dialog(heading_text, msg_text, bottom_text, icon_name: None, 
+def dialog(heading_text, msg_text, bottom_text, icon_name, 
         btn1_text, btn1_event, btn2_text=None, btn2_event=None):
     cls()
-
-    # if icon_name in icons:
-    #     icon = Label(main_frame, image=icons[icon_name])
-    #     icon.place(x=470, y=10, anchor=NE)
+    
+    icon = None
+    if icon_name in icons:
+        icon = Label(main_frame, image=icons[icon_name], bg=COLORS['BG'])
+        icon.place(x=470, y=10, anchor=NE)
 
     if heading_text:
         heading = Label(main_frame, text=heading_text, font=f_heading, 
                 justify='left', bg=COLORS['BG'])
         heading.place(x=0, y=0)
 
-    msg = []
+    msg_labels = []
+    next_y = 0
+    if heading_text:
+        # If there’s a heading, leave space so msg_text doesn't cover it up
+        next_y = 30
     if isinstance(msg_text, str): 
         # Convert to list if message is only one line / a string
         msg_text = [msg_text]
+
     for index, item in enumerate(msg_text):
-        if item.startswith('<b>'):
-            msg.append(Label(main_frame, text=item[3:], justify='left', 
-                wraplength=470, font=f_bold, bg=COLORS['BG']))
-        else:
-            msg.append(Label(main_frame, text=item, justify='left', 
+        msg_labels.append(Label(main_frame, text=item, justify='left', 
                 wraplength=470, bg=COLORS['BG']))
 
-        if heading_text:
-            msg[index].place(x=0, y=36+index*24)
-        else: # Empty heading = place text at top
-            msg[index].place(x=0, y=index*24)
+        # Apply bold styling as needed
+        if item.startswith('<b>'):
+            msg_labels[-1].config(font=f_bold, text=item[3:]) # strip <b> tag
+
+        # Shorten wrapping if dialog box has icon, so text doesn’t cover it
+        if icon and next_y < 100:
+            msg_labels[-1].config(wraplength=380)
+
+        msg_labels[index].place(x=0, y=next_y)
+        next_y += msg_labels[-1].winfo_reqheight() + 4
 
     if bottom_text:
-        bottom = Label(main_frame, text=bottom_text, justify='left', 
-                bg=COLORS['BG'])
-        bottom.place(x=0, y=280, anchor=SW)
+        bottom = []
+        bottom_next_y = 280
+        if isinstance(bottom_text, str): 
+            # Convert to list if bottom text is only one line / a string
+            bottom_text = [bottom_text]
 
-    btn1 = Button(main_frame, text=btn1_text,
+        for index, item in enumerate(reversed(bottom_text)):
+            bottom.append(Label(main_frame, text=item, justify='left', 
+                    wraplength=470, bg=COLORS['BG']))
+
+            # Apply bold styling as needed
+            if item.startswith('<b>'):
+                bottom[-1].config(font=f_bold, text=item[3:]) # strip <b> tag
+
+            bottom[index].place(x=0, y=bottom_next_y, anchor=SW)
+            bottom_next_y -= bottom[-1].winfo_reqheight() - 4
+
+    btn1 = Button(main_frame, text=btn1_text, 
             highlightbackground=COLORS['BG'])
     if btn2_text:
-        btn2 = Button(main_frame, text=btn2_text,
+        btn2 = Button(main_frame, text=btn2_text, 
                 highlightbackground=COLORS['BG'])
 
     if btn2_text:
@@ -384,6 +430,8 @@ ALL_OBJECTS = {
     35: ('bill blaster', 0b11111),
     36: ('bullet bill', 0b11111),
     37: ('object spawner', 0b11110),
+    38: ('cheep cheep', 0b10000),
+    39: ('blooper', 0b10000),
     49: ('hammer bro', 0b11111),
     50: ('fire bro', 0b10000),
     81: ('mushroom', 0b11111),
@@ -392,6 +440,7 @@ ALL_OBJECTS = {
     84: ('star', 0b11111),
     85: ('axe', 0b11111),
     86: ('poison mushroom', 0b11111),
+    86: ('???????', 0b10000),
     97: ('coin', 0b11111),
     100: ('gold flower', 0b01000), 
         # LEGACY ONLY, not in Deluxe, in Remake editor but unused
@@ -1104,7 +1153,7 @@ def convert_file():
         initialdir='./')
     # If save_path is still empty, user cancelled, back to menu
     if save_path == '':
-        main()
+        menu()
         return
 
     status_complete()
@@ -1132,7 +1181,7 @@ Please tell Clippy!'''
         done_heading = 'Done in %f seconds' % (t2-t1)
 
     # Tell the user the conversion is done
-    dialog(done_heading, warnings, None, None, 'Continue', main)
+    dialog(done_heading, warnings, None, 'done', 'Continue', menu)
 
 def convert_folder():
     status_complete()
@@ -1213,12 +1262,13 @@ def convert_folder():
 
     # Tell the user the conversion is done
     dialog(done_heading, 
-            'Converter warnings have been logged to _WARNINGS.LOG.',
-            None, None, 'Continue', main)
+            'If there were any converter warnings, they have been logged to \
+_WARNINGS.LOG.',
+            None, 'done', 'Continue', menu)
 
-def main():
+def setup():
     #### INITIAL GUI SETUP ####
-    # main is a separate function from menu() 
+    # setup is a separate function from menu() 
     # because we only need to do everything here once
 
     # Place frames
@@ -1230,6 +1280,8 @@ def main():
     footer.place(x=80, y=315, anchor=S)
     for index, item in enumerate(steps):
         item.place(x=0, y=24+24*index)
+    back_btn.place(x=80, y=295, anchor=S)
+    back_btn.bind('<Button-1>', lambda _: menu())
     # Note that the position of anything with main_frame as parent is 
     # RELATIVE (i.e. 160 will be added to x)
 
@@ -1277,27 +1329,23 @@ def toggle_reverse():
 'Reverse Mode is OFF (converting to DELUXE format)')
 
 def warnings_bugs():
-    dialog('⚠️ WARNING - HEALTH AND SAFETY', 
-        '''Playing converted worlds may get you banned from MR Deluxe!
-This appears to be a false positive in the game's anticheat.
-This bug is known to be triggered by converting the Royale City world.
-It may affect other worlds with vertical scrolling or Remake-only features.
-I am not responsible if this program lands you in jail!!!
-
-OTHER KNOWN BUGS:
+    dialog('WARNING - HEALTH AND SAFETY', 
+        [
+            '<b>Playing converted worlds may cause false positives in the \
+game’s anticheat. I am not responsible if this program gets you banned!',
+            '''OTHER KNOWN BUGS:
 - MRDX will not load music in converted worlds
 - All worlds use the Deluxe obj sheet
-- assets.json animations will play at 2× speed since the game is now 60fps
-
-Reverse Mode is in beta, and I make no guarantees that any worlds
-converted with it will work.
-''', None, None,
+- assets.json animations will play at 2× speed since the game is now 60fps''',
+            'Reverse Mode is in beta, and I make no guarantees that any \
+worlds converted with it will work.'
+        ], None, 'warning',
         'Okay', menu)
 
 def crash(exctype=None, excvalue=None, tb=None):
     import tkinter.messagebox as messagebox
     try:
-        bomb = PhotoImage(file='bomb.gif')
+        bomb = PhotoImage(file='ui/bomb.png')
         window.iconphoto(False, bomb)
     finally:
         messagebox.showerror(window, 
@@ -1340,9 +1388,9 @@ and hide your browser’s toolbar.''')
 2. Click “Fork Repl” and follow the instructions.
 3. In your newly-forked project, drag the world JSONs you want to convert \
 into the list of files in the left sidebar.''')
-        main()
+        setup()
     else:
-        main()
+        setup()
 
 except Exception as e:
     ei = sys.exc_info()
