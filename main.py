@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 2.1.0
+Version 2.2.0
 
 Copyright © 2022–2023 clippy#4722
 
@@ -136,10 +136,24 @@ Version 2.1.0 (Feb. 3, 2023):
   * Now requires Pillow to display icons 
       * Offline users: use "pip3 install pillow" in your terminal
 
+Version 2.2.0 (Mar. 1, 2023):
+  + Deluxifier is now out of beta because Deluxe has been officially released!
+  + Better map sheet URL expansion
+      * Now converts URLs other than the standard smb_map
+      * First tries the Legacy Github, then if that fails, tries Remake
+  + New Deluxe tiles: flip blocks, item block regen & prog/invis,
+    random warp tile, warp pipe up & single
+  + New Deluxe objects: leaf, SMW goalpost
+  + Vertical scrolling support
+  * Deluxifier now requires the "requests" module. If you're running the offline
+    version, please run the following command in your terminal:
+        pip3 install requests
+  - Removed Thwomps
+
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
-import codecs, json, sys, os
+import codecs, json, sys, os, requests
 import PIL.ImageTk
 from time import time
 from glob import glob
@@ -149,7 +163,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '2.1.0 beta'
+VERSION = '2.2.0'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -415,7 +429,6 @@ INFERNO = 0b00001
 #   different ID in Classic, Legacy, and Remake
 ALL_OBJECTS = {
     1: ('player', 0b11111),
-    15: ('thwomp', 0b10000),
     16: ('goombrat', 0b10000),
     17: ('goomba', 0b11111),
     18: ('green koopa', 0b11111),
@@ -440,7 +453,7 @@ ALL_OBJECTS = {
     84: ('star', 0b11111),
     85: ('axe', 0b11111),
     86: ('poison mushroom', 0b11111),
-    86: ('???????', 0b10000),
+    86: ('leaf', 0b10000),
     97: ('coin', 0b11111),
     100: ('gold flower', 0b01000), 
         # LEGACY ONLY, not in Deluxe, in Remake editor but unused
@@ -451,6 +464,7 @@ ALL_OBJECTS = {
     162: ('fire breath projectile', 0b11111),
     163: ('hammer projectile', 0b11111),
     177: ('flag', 0b11111),
+    177: ('goalpost', 0b10000), # from SMW
     253: ('text', 0b11111),
     254: ('checkmark', 0b11111),
 }
@@ -468,10 +482,13 @@ VALID_TILES = {
     5: ('air damage', 0b10000), # was semisolid in Remake/Legacy
     6: ('semisolid', 0b10000), # was semisolid weak in Remake/Legacy
     7: ('water', 0b11110),
+    8: ('flip block', 0b10000),
     10: ('solid ice', 0b11100),
     11: ('note block', 0b11100), # called "pop block" in Remake but works same
     12: ('item note block', 0b11000), # conveyor in Remake (custom levels only)
     13: ('ice -> object', 0b10000), # was ice -> tile in Legacy
+    14: ('conveyor left', 0b10000), # Conveyors worked differently in Remake...
+    15: ('conveyor right', 0b10000), # Due to the ID conflict
     17: ('item block', 0b11111),
     18: ('coin block', 0b11111),
     19: ('coin block multi', 0b11111),
@@ -480,6 +497,8 @@ VALID_TILES = {
     22: ('coin block invisible', 0b11111),
     24: ('vine block', 0b11111),
     25: ('item block infinite', 0b11110),
+    26: ('item block regen', 0b10000),
+    27: ('item block invisible progressive', 0b10000),
     30: ('scroll lock', 0b11000), # (LEGACY/DELUXE ONLY)
     31: ('scroll unlock', 0b11000), # (LEGACY/DELUXE ONLY)
     81: ('warp tile', 0b11111),
@@ -488,8 +507,11 @@ VALID_TILES = {
     84: ('warp pipe down fast', 0b11111),
     85: ('warp pipe right fast', 0b11111),
     86: ('level end warp', 0b11111),
+    87: ('warp tile random', 0b10000),
     89: ('warp pipe left slow', 0b11000), # (LEGACY/DELUXE ONLY)
     90: ('warp pipe left fast', 0b11000), # (LEGACY/DELUXE ONLY)
+    91: ('warp pipe up slow', 0b11000), # (LEGACY/DELUXE ONLY)
+    92: ('warp pipe up fast', 0b11000), # (LEGACY/DELUXE ONLY)
     160: ('flagpole', 0b11111),
     165: ('vine', 0b11111),
     239: ('sound block', 0b10000), # Deluxe only, unused in Legacy at diff. ID
@@ -506,9 +528,13 @@ CONVERT_TILES = {
     # Supported but under a new ID
     # Make sure the new ID has an entry in VALID_TILES!
     5: ('semisolid', 6, False),
+    14: ('flip block', 8, False), # LEGACY ONLY
     15: ('air damage', 5, False), # LEGACY ONLY
     16: ('ice -> object', 13, False),
         # fireball turns ice into object id specified in extra data
+    26: ('item block invisible progressive', 27, False), # LEGACY ONLY
+    87: ('warp pipe single slow', 93, False), # LEGACY ONLY
+    88: ('warp pipe single fast', 94, False), # LEGACY ONLY
 
     # Unsupported, to replace with fallbacks
     # 5 moved
@@ -517,20 +543,18 @@ CONVERT_TILES = {
     8: ('water surface', 7, True), # pushes you down?
     9: ('water current', 7, True), # pushes you left/right
     13: ('ice -> tile', 13, True), 
-        # Confirmed REMOVED IN DELUXE
+        # Maybe coming soon to Deluxe?
         # fireball turned ice into tile def specified in extra data
         # Turning this into IceObject without updating extra data may cause
         # bugs in-game... we'll see
-    14: ('flip block', 3, True), # LEGACY ONLY
+    # 14 moved
     # 15 moved
     # 16 moved
     23: ('semisolid ice', 1, True), # LEGACY ONLY
-    26: ('item block progressive invisible', 21, True), # LEGACY ONLY
+    # 26 moved
     40: ('checkpoint (legacy beta)', 0, True), # LEGACY ONLY (unused)
-    87: ('warp pipe single slow', 81, True), # LEGACY ONLY
-    88: ('warp pipe single fast', 81, True), # LEGACY ONLY
-    91: ('warp pipe up slow', 81, True), # LEGACY ONLY
-    92: ('warp pipe up fast', 81, True), # LEGACY ONLY
+    # 93 moved
+    # 94 moved
     161: ('flagpole level end warp', 86, True),
         # LEGACY ONLY: ends level only if you went down flagpole
         # Suspected REMOVED IN DELUXE
@@ -544,13 +568,26 @@ replaced_tiles = []
 # deluxe_id: (legacy_id, legacy_name)
 REVERSE_CONVERT_TILES = {
     6: (5, 'semisolid'),
+    8: (14, 'flip block'),
     5: (15, 'air damage'),
     13: (16, 'ice -> object'),
+    27: (26, 'item block invisible progressive'),
+    93: (87, 'warp pipe single slow'),
+    94: (88, 'warp pipe single fast'),
 }
 
 # Misc. global booleans
 reverse_mode = False
 convert_fail = False
+
+# Test if an image file exists on the web
+def web_file_exists(path):
+    try:
+        r = requests.head(path)
+        return r.status_code == requests.codes.ok
+    except requests.exceptions.SSLError: 
+        # If Remake's certificate expired AGAIN
+        return None
 
 # Convert 1 world file from Legacy TO DELUXE, and return string 
 # containing all converter warnings
@@ -628,9 +665,14 @@ format.\n%s\n''' % open_path
         content['resource'].append({"id":"effects",
                 "src":"img/game/smb_effects.png"})
 
-        # Delete world data that isn't in Deluxe
+        # Vertical (really free-roam) scrolling is now set zone-by-zone
+        vertical_world = False
         if 'vertical' in content:
+            if content['vertical'] == 'true':
+                vertical_world = True
             del content['vertical']
+
+        # Delete world data that isn't in Deluxe
         if 'shortname' in content:
             del content['shortname']
         if 'musicOverridePath' in content:
@@ -658,11 +700,38 @@ content['assets']
 
         # Convert map & obj sheets
         for index, item in enumerate(content['resource']):
-            # Convert relative map paths to the final Legacy map
-            # because the Deluxe sheets are different
-            if item['id'] == 'map' and item['src'] == 'img/game/smb_map.png':
-                content['resource'][index]['src'] = '\
-https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
+            # Convert relative map paths to the full Legacy URL, or if it
+            # doesn't exist (because it's a Remake-only world), then use the
+            # remake URL.
+            # First of all, only do this if it *is* a relative path, because
+            # if it's already a full URL, then we shouldn't have any issues
+            if item['id'] == 'map' and not \
+                    (item['src'].startswith('http://') or \
+                    item['src'].startswith('https://') or \
+                    item['src'].startswith('//')):
+                # First try Legacy URL
+                legacy_url = \
+'https://raw.githubusercontent.com/mroyale/assets/master/' + item['src']
+                exists_in_legacy = web_file_exists(legacy_url)
+                if exists_in_legacy == True:
+                    content['resource'][index]['src'] = legacy_url
+                elif exists_in_legacy == None:
+                    content['resource'][index]['src'] = legacy_url
+                    warnings += 'Security error on Legacy map image.\n'
+                else:
+                    # If it's not in Legacy at all, fall back to Remake URL
+                    remake_url = 'https://mroyale.net/' + item['src']
+                    exists_in_remake = web_file_exists(remake_url)
+                    if exists_in_remake == True:
+                        content['resource'][index]['src'] = remake_url
+                    elif exists_in_remake == None:
+                        content['resource'][index]['src'] = remake_url
+                        warnings += \
+'Security error on Remake map image, what a surprise.\n\n'
+                    # If it's not in Legacy or Remake, then throw up our hands
+                    else:
+                        warnings += '''Could not expand URL of map image.
+Your converted world may not be playable.\n\n'''
 
             # Convert obj path to relative path so it uses the new Deluxe
             # obj and not the Legacy/Remake one which is now glitched
@@ -682,6 +751,10 @@ https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_map.png'
                 if 'levelendoff' in content['world'][level_i]['zone'][zone_i]:
                     del content['world'][level_i]['zone'][zone_i]\
                             ['levelendoff']
+                    
+                # If world was vertical, add free-roam camera setting for zone
+                if vertical_world:
+                    content['world'][level_i]['zone'][zone_i]['camera'] = 2
                 
                 # Check for unsupported objects and remove them
                 # Need to use a while loop because length of obj list may
@@ -948,13 +1021,9 @@ format.\n%s\n''' % open_path
         for index, item in enumerate(content['resource']):
             # Convert relative smb_map path to the current Deluxe map
             # because it's different from Legacy.
-            if item['id'] == 'map' and item['src'] == 'img/game/smb_map.png':
-                content['resource'][index]['src'] = 'https://github.com/\
-WaluigiRoyale/MR-Converter-3/raw/main/assets/deluxe/smb_map.png'
-                # Since Deluxe isn't publicly available right now, I'll need
-                # to use my own Github upload of the Deluxe map from the
-                # skin converter
-                # Other map files will be added later.
+            if item['id'] == 'map':
+                content['resource'][index]['src'] = \
+'https://marioroyale.com/royale/' + item['src']
 
         for level_i, level in enumerate(content['world']): # Loop thru levels
             for zone_i, zone in enumerate(level['zone']): # Loop thru zones
@@ -1336,7 +1405,9 @@ game’s anticheat. I am not responsible if this program gets you banned!',
             '''OTHER KNOWN BUGS:
 - MRDX will not load music in converted worlds
 - All worlds use the Deluxe obj sheet
-- assets.json animations will play at 2× speed since the game is now 60fps''',
+- assets.json animations will play at 2× speed since the game is now 60fps
+- Conveyors (from Remake) are not yet converted properly. A fix will be \
+released in the near future.''',
             'Reverse Mode is in beta, and I make no guarantees that any \
 worlds converted with it will work.'
         ], None, 'warning',
@@ -1395,5 +1466,3 @@ into the list of files in the left sidebar.''')
 except Exception as e:
     ei = sys.exc_info()
     crash(None, ei[1])
-
-# TODO: 2022-12-20, 14:57 EST
