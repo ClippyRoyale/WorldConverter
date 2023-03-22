@@ -1,154 +1,25 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 2.2.0
+Version 2.2.1
 
 Copyright © 2022–2023 clippy#4722
 
-WARNING:
-MR Deluxe is in closed beta. The world format may change at any time.
-Don't delete your old world files (even after the game is out).
-
 LICENSE INFO:
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
 
-For a copy of the license, see <https://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program (see the file license.txt).
+    If not, see <https://www.gnu.org/licenses/>.
 
-CHANGELOG:
-Version 0.0 (Sep. 1, 2022): Preliminary version; based on sample world files.
-    Converted worlds cannot be used in-game yet.
-
-Version 0.1 (Sep. 30, 2022): Based on the newest private world 1 file.
-  + Inserts default resources.effects (which wasn't in Legacy)
-  + Deletes data only used in Legacy/Remake (e.g. layers, shortname)
-  + Fixes relative resource URLs so they use Legacy sprites instead of
-    glitched Deluxe ones
-  - Removed insertion of resources.player (no longer part of DX world JSON)
-
-Version 0.2 (Oct. 2, 2022):
-  + Deletes objects that Deluxe doesn't support
-      * The converter should now produce playable conversions for all worlds,
-        though some features may be missing from newer worlds. I haven't
-        tried it on every world yet, so please report any bugs/game crashes!
-  + Better warnings if you try to overwrite an existing file
-      * Basically went back to how it was in v0.0 but with a major bug fixed
-  * Convert ALL obj sheets to the Deluxe default, not just Legacy default objs
-  * Many more comments explaining how the code works
-  + Jacob
-
-Version 0.2.1 (Oct. 2, 2022):
-  + Spinies are no longer deleted when converting
-      * They got added back into Deluxe
-
-Version 0.2.2 (Oct. 15, 2022):
-  + Buzzy beetles are no longer deleted when converting
-      * They got added back into Deluxe
-
-Version 0.3 (Oct. 16, 2022):
-  + Assets file is no longer deleted when converting
-      * Side effect of fixing animation bugs
-  + Add fallback assets if the world never had assets URL to begin with
-    (e.g. if it's a remake world)
-
-Version 0.4 (Oct. 18, 2022):
-  + Converter now flags unsupported tile definitions and tries to degrade
-    them gracefully
-
-Version 0.5 (Oct. 23, 2022):
-  + Auto-converts air damage and semisolid
-  + Now distinguishes between incompatible tiles being replaced with fallbacks
-    and tiles whose IDs just changed
-  + Put framework in place for more compatibility checking to be added later
-  * No longer deletes warp pipe left (slow and fast)
-      * They got added back into Deluxe
-
-Version 0.5.1 (Oct. 25, 2022):
-  * Water standard is no longer deleted when converting
-      * It got added back into Deluxe
-
-Version 0.6 (Oct. 31, 2022):
-  + Added ability to convert multiple worlds without having to restart program
-  + Sound blocks added to Deluxe
-
-Version 0.6.1 (Nov. 2, 2022):
-  * Fixed crashes when converting a file without an assets.json link
-
-Version 0.6.2 (Nov. 29, 2022):
-  + Now supports Goombrats
-      * They were added to Deluxe; not sure why a Legacy world would have the
-        ID but if you add it in manually because you're using the Remake
-        editor or something, they won't get taken out
-  + Warning about anticheat false positives
-  * Removes "vertical" metadata because Deluxe doesn't support vertical (yet)
-  - Removed Jacob
-      * Sorry, it took up too much space
-
-Version 0.6.3 (Nov. 30, 2022):
-  + No longer deletes gamemode
-
-Version 1.0.0 (Dec. 16, 2022):
-  + Added GUI
-      * Based on the Skin Converter GUI
-      * Helpfully colored blue so you can tell it apart
-  + Added batch conversion (convert every world in a folder)
-  * Increased stability when handling invalid files
-  * Fixed loading of JSON files so converter can read files with byte order
-    marks (e.g. Legacy hell1.json)
-  * While the program itself is stable, it should still be treated as a
-    public beta because Deluxe isn't out yet.
-
-Version 1.1.0 (Dec. 20, 2022):
-  + Converter now detects worlds already in Deluxe format
-      * This used to make the converter crash, but now it just refuses to
-        convert Deluxe worlds
-  + Converts all "type" data to "game"
-      * This makes converted lobbies playable
-  + Supports new Deluxe tile defs:
-      * 10: Solid Ice
-      * 11: Note Block
-      * 12: Item Note Block
-      * 13: Ice -> Tile
-
-Version 1.2.0 (Dec. 21, 2022): “The Layers Update”
-  + Converter properly handles layers (which are now supported in Deluxe)
-
-Version 1.3.0 (Dec. 25, 2022):
-  + Updates levels to account for new water hitboxes, so water areas are 
-    playable as intended (even if the conversion isn’t 1:1)
-  - Removed checkpoints (they were either taken out of Deluxe or never added
-    in the first place)
-      * Thanks to Pyriel for helping me find this bug!
-
-Version 2.0.0 (Jan. 8, 2023):
-  + Added experimental De-Deluxifier for converting Deluxe levels to Legacy
-
-Version 2.1.0 (Feb. 3, 2023):
-  + App icon
-  + UI improvements from Skin Converter
-  + Supports new Deluxe objects: Cheep Cheep (underwater), Blooper, and ???????
-  * Now requires Pillow to display icons 
-      * Offline users: use "pip3 install pillow" in your terminal
-
-Version 2.2.0 (Mar. 1, 2023):
-  + Deluxifier is now out of beta because Deluxe has been officially released!
-  + Better map sheet URL expansion
-      * Now converts URLs other than the standard smb_map
-      * First tries the Legacy Github, then if that fails, tries Remake
-  + New Deluxe tiles: flip blocks, item block regen & prog/invis,
-    random warp tile, warp pipe up & single
-  + New Deluxe objects: leaf, SMW goalpost
-  + Vertical scrolling support
-  * Deluxifier now requires the "requests" module. If you're running the offline
-    version, please run the following command in your terminal:
-        pip3 install requests
-  - Removed Thwomps
+CHANGELOG: See changelog.txt
 
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
@@ -163,25 +34,26 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '2.2.0'
+VERSION = '2.2.1'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
 window.geometry('640x320')
-# UNCOMMENT THIS LINE ON REPLIT BUILDS OR TO RUN THE APP IN FULLSCREEN
-window.attributes('-fullscreen', True)
+# Run in fullscreen on Replit only
+if os.path.isdir("/home/runner") == True:
+    window.attributes('-fullscreen', True)
 
 app_icon = PhotoImage(file='ui/icon.png')
 window.iconphoto(False, app_icon)
 
-COLORS = {
+colors = {
     'red': '#c00000',
     'green': '#008000',
     'blue': '#0080ff',
     'gray': '#808080',
     'silver': '#c0c0c0',
     # Background color is baby blue to distinguish this app from Skin Converter
-    'BG': '#c0e0ff',
+    'BG': '#e0f0ff',
 }
 
 # Different platforms use different default font sizes.
@@ -196,7 +68,7 @@ f_bold = tkfont.Font(weight='bold', size=relative_font_size(1))
 f_large = tkfont.Font(size=relative_font_size(1.5))
 f_heading = tkfont.Font(weight='bold', size=relative_font_size(1.5))
 
-side_frame = LabelFrame(window, width=160, height=320, bg=COLORS['BG'])
+side_frame = LabelFrame(window, width=160, height=320, bg=colors['BG'])
 
 '''
 gray = not yet reached
@@ -206,47 +78,47 @@ red = failed
 '''
 step_status = ['blue', 'gray', 'gray', 'gray']
 steps = [
-    Label(side_frame, text='● Main Menu', fg=COLORS[step_status[0]], 
-        justify='left', bg=COLORS['BG']),
+    Label(side_frame, text='● Main Menu', fg=colors[step_status[0]], 
+        justify='left', bg=colors['BG']),
     Label(side_frame, text='● Open & Save Paths', 
-        fg=COLORS[step_status[1]], 
-        justify='left', bg=COLORS['BG']),
-    Label(side_frame, text='● Run Script', fg=COLORS[step_status[2]], 
-        justify='left', bg=COLORS['BG']),
-    Label(side_frame, text='● Summary', fg=COLORS[step_status[3]], 
-        justify='left', bg=COLORS['BG']),
+        fg=colors[step_status[1]], 
+        justify='left', bg=colors['BG']),
+    Label(side_frame, text='● Run Script', fg=colors[step_status[2]], 
+        justify='left', bg=colors['BG']),
+    Label(side_frame, text='● Summary', fg=colors[step_status[3]], 
+        justify='left', bg=colors['BG']),
 ]
 
 title = Label(side_frame, text='Deluxifier v'+VERSION, 
-        font=f_bold, bg=COLORS['BG'])
+        font=f_bold, bg=colors['BG'])
 footer = Label(side_frame, text='a Clippy production', 
-        fg=COLORS['gray'], bg=COLORS['BG'])
+        fg=colors['gray'], bg=colors['BG'])
 
-main_frame = LabelFrame(window, width=480, height=320, bg=COLORS['BG'])
+main_frame = LabelFrame(window, width=480, height=320, bg=colors['BG'])
 main_frame.grid_propagate(False)
 
 menu_heading = Label(main_frame, text='Welcome to Deluxifier', 
-        font=f_heading, bg=COLORS['BG'])
+        font=f_heading, bg=colors['BG'])
 menu_subhead = Label(main_frame, 
-        text='The community-supported MR Deluxe world converter', bg=COLORS['BG'])
+        text='The community-supported MR Deluxe world converter', bg=colors['BG'])
 
 menu_btns = [
     Button(main_frame, text='Convert one world',
-            font=f_large, highlightbackground=COLORS['BG']),
+            font=f_large, highlightbackground=colors['BG']),
     Button(main_frame, text='Convert every world in a folder',
-            font=f_large, highlightbackground=COLORS['BG']),
+            font=f_large, highlightbackground=colors['BG']),
     Label(main_frame, text='Reverse Mode is OFF (converting to DELUXE format)',
-            bg=COLORS['BG']), # filler
+            bg=colors['BG']), # filler
     Button(main_frame, text='Toggle Reverse Mode (BETA)', 
-            highlightbackground=COLORS['BG']),
+            highlightbackground=colors['BG']),
     Button(main_frame, text='Warnings & Bugs', 
-            highlightbackground=COLORS['BG']),
-    Label(main_frame, bg=COLORS['BG']), # filler
-    Button(main_frame, text='Exit', highlightbackground=COLORS['BG']),
+            highlightbackground=colors['BG']),
+    Label(main_frame, bg=colors['BG']), # filler
+    Button(main_frame, text='Exit', highlightbackground=colors['BG']),
 ]
 
 back_btn = Button(side_frame, text='Back to Menu', 
-        highlightbackground=COLORS['BG'])
+        highlightbackground=colors['BG'])
 
 icons = {
     'info': \
@@ -273,7 +145,7 @@ def status_refresh():
     cls()
     # Update fill color for each step, then draw it
     for index, item in enumerate(steps):
-        item.config(fg=COLORS[step_status[index]])
+        item.config(fg=colors[step_status[index]])
         item.place(x=0, y=24+24*index)
 
 # Update the status for each step and redraw the steps
@@ -320,87 +192,134 @@ def update_subhead(subhead, current, target):
     subhead = Label(main_frame, 
             text='Now converting file %i of %i (%s%%)' % \
                     (current+1, target, rounded_pct), 
-            justify='left', bg=COLORS['BG'])
+            justify='left', bg=colors['BG'])
     subhead.place(x=0, y=36)
 
     return subhead
 
-# Generic function to display a dialog box in the window, 
-# with text and buttons.
-# The code here is copied from the Skin Converter's dialog() function.
-# Deluxifier doesn’t use icons, to reduce the number of dependencies, and
-# because it has fewer dialog boxes. However, the 
+# Displays a dialog box with one or more buttons to the user. Holds until the
+# user clicks a button. Returns the name of the button clicked.
+# Intended to replace dialog().
+# icon is one of: info, question, warning, error, done, bomb
+def button_dialog(title:str, message,
+                  buttons=['Cancel', 'Okay'], *, icon:str=None):
+    cls()
+
+    button_clicked = None
+    # Local function that all button event bindings point to
+    # Sets the button_clicked variable one layer up so the function knows
+    # it can return
+    def button_event(index:int):
+        nonlocal button_clicked
+        button_clicked = index
+
+    dialog_icon = None
+    if icon in icons:
+        dialog_icon = Label(main_frame, image=icons[icon], bg=colors['BG'])
+        dialog_icon.place(x=470, y=10, anchor=NE)
+
+    next_y = 0
+    if title:
+        dialog_title = Label(main_frame, text=title, font=f_heading, 
+                justify='left', bg=colors['BG'])
+        dialog_title.place(x=0, y=0)
+        # If there’s title text, leave space so msg_text doesn't cover it up
+        next_y = 30
+
+    dialog_message = []
+    if isinstance(message, str): 
+        # Convert to list if message is only one line / a string
+        message = [message]
+
+    for index, item in enumerate(message): # TODO: Scroll if not enough space
+        dialog_message.append(Label(main_frame, text=item, justify='left', 
+                wraplength=470, bg=colors['BG']))
+
+        # Apply bold styling as needed
+        if item.startswith('<b>'):
+            dialog_message[-1].config(font=f_bold, 
+                                      text=item[3:]) # strip <b> tag
+
+        # Shorten wrapping if dialog box has icon, so text doesn’t cover it
+        if icon and next_y < 100:
+            dialog_message[-1].config(wraplength=380)
+
+        dialog_message[index].place(x=0, y=next_y)
+        next_y += dialog_message[-1].winfo_reqheight() + 4
+
+    # Reworked dialogs won't support bottom text 
+    # (it adds unnecessary complexity).
+
+    dialog_buttons = []
+    for i in buttons:
+        dialog_buttons.append(Button(main_frame, text=i, 
+                                     highlightbackground=colors['BG']))
+
+    # Place buttons one by one on the frame, aligned right and starting with
+    # the rightmost button
+    next_button_x = 470
+    for i in reversed(dialog_buttons):
+        i.place(x=next_button_x, y=310, anchor=SE)
+        next_button_x -= i.winfo_reqwidth()
+        next_button_x -= 10 # a little extra space between buttons
+
+    # Set event bindings for all buttons
+    for index, item in enumerate(dialog_buttons):
+        item.bind('<ButtonRelease-1>', lambda _: button_event(index))
+
+    # Wait for user to click a button
+    while button_clicked == None:
+        window.update()
+    # Once we get here, a button has been clicked, so return the button's name
+    return button_clicked
+
+# Simplified version of button_dialog() that only allows 2 buttons and returns
+# a boolean value. If the user clicks the right/Okay button, return True.
+# Otherwise, if the user clicks the left/Cancel button, return False.
+def bool_dialog(title:str, message,
+                  button1='Cancel', button2='Okay', *, icon:str=None):
+    button_name = button_dialog(title, message, [button1, button2], icon=icon)
+    if button_name == button2:
+        return True
+    else:
+        return False
+    
+# Single-button dialog. Returns None.
+def simple_dialog(title:str, message, button='Okay', *, icon:str=None):
+    button_dialog(title, message, [button], icon=icon)
+
+# Legacy function to display a dialog box in the window, 
+# with text and buttons. Use in new code is not recommended,
+# as simple_dialog, bool_dialog, and button_dialog make code easier to follow.
 def dialog(heading_text, msg_text, bottom_text, icon_name, 
         btn1_text, btn1_event, btn2_text=None, btn2_event=None):
     cls()
-    
-    icon = None
-    if icon_name in icons:
-        icon = Label(main_frame, image=icons[icon_name], bg=COLORS['BG'])
-        icon.place(x=470, y=10, anchor=NE)
 
-    if heading_text:
-        heading = Label(main_frame, text=heading_text, font=f_heading, 
-                justify='left', bg=COLORS['BG'])
-        heading.place(x=0, y=0)
-
-    msg_labels = []
-    next_y = 0
-    if heading_text:
-        # If there’s a heading, leave space so msg_text doesn't cover it up
-        next_y = 30
     if isinstance(msg_text, str): 
         # Convert to list if message is only one line / a string
         msg_text = [msg_text]
 
-    for index, item in enumerate(msg_text):
-        msg_labels.append(Label(main_frame, text=item, justify='left', 
-                wraplength=470, bg=COLORS['BG']))
-
-        # Apply bold styling as needed
-        if item.startswith('<b>'):
-            msg_labels[-1].config(font=f_bold, text=item[3:]) # strip <b> tag
-
-        # Shorten wrapping if dialog box has icon, so text doesn’t cover it
-        if icon and next_y < 100:
-            msg_labels[-1].config(wraplength=380)
-
-        msg_labels[index].place(x=0, y=next_y)
-        next_y += msg_labels[-1].winfo_reqheight() + 4
-
     if bottom_text:
-        bottom = []
-        bottom_next_y = 280
-        if isinstance(bottom_text, str): 
-            # Convert to list if bottom text is only one line / a string
-            bottom_text = [bottom_text]
+        msg_text.append('') # Blank line to separate from main text
+        if type(bottom_text) == list:
+            msg_text.extend(bottom_text)
+        else: # i.e. if string
+            msg_text.append(bottom_text)
 
-        for index, item in enumerate(reversed(bottom_text)):
-            bottom.append(Label(main_frame, text=item, justify='left', 
-                    wraplength=470, bg=COLORS['BG']))
-
-            # Apply bold styling as needed
-            if item.startswith('<b>'):
-                bottom[-1].config(font=f_bold, text=item[3:]) # strip <b> tag
-
-            bottom[index].place(x=0, y=bottom_next_y, anchor=SW)
-            bottom_next_y -= bottom[-1].winfo_reqheight() - 4
-
-    btn1 = Button(main_frame, text=btn1_text, 
-            highlightbackground=COLORS['BG'])
+    # Starting in version 5.0, this deprecated function is just a wrapper for
+    # bool_dialog.
     if btn2_text:
-        btn2 = Button(main_frame, text=btn2_text, 
-                highlightbackground=COLORS['BG'])
+        answer = bool_dialog(heading_text, msg_text, btn1_text, btn2_text, 
+                            icon=icon_name)
 
-    if btn2_text:
-        btn1.place(x=230, y=310, anchor=SE)
-        btn2.place(x=250, y=310, anchor=SW)
+        # Replicate function-executing behavior of original dialog()
+        if answer:
+            btn2_event()
+        else:
+            btn1_event()
     else:
-        btn1.place(x=240, y=310, anchor=S)
-
-    btn1.bind('<Button-1>', lambda _: btn1_event())
-    if btn2_text:
-        btn2.bind('<Button-1>', lambda _: btn2_event())
+        simple_dialog(heading_text, msg_text, btn1_text, icon=icon_name)
+        btn1_event()
 
 #### END UI CODE ####
 
@@ -453,7 +372,8 @@ ALL_OBJECTS = {
     84: ('star', 0b11111),
     85: ('axe', 0b11111),
     86: ('poison mushroom', 0b11111),
-    86: ('leaf', 0b10000),
+    87: ('leaf', 0b10000),
+    88: ('hammer suit', 0b10000),
     97: ('coin', 0b11111),
     100: ('gold flower', 0b01000), 
         # LEGACY ONLY, not in Deluxe, in Remake editor but unused
@@ -709,29 +629,47 @@ content['assets']
                     (item['src'].startswith('http://') or \
                     item['src'].startswith('https://') or \
                     item['src'].startswith('//')):
-                # First try Legacy URL
-                legacy_url = \
+                try:
+                    # Preferred option: detect Remake vs. Legacy by checking for
+                    # the map sheet online
+                    
+                    # First try Legacy URL
+                    legacy_url = \
 'https://raw.githubusercontent.com/mroyale/assets/master/' + item['src']
-                exists_in_legacy = web_file_exists(legacy_url)
-                if exists_in_legacy == True:
-                    content['resource'][index]['src'] = legacy_url
-                elif exists_in_legacy == None:
-                    content['resource'][index]['src'] = legacy_url
-                    warnings += 'Security error on Legacy map image.\n'
-                else:
-                    # If it's not in Legacy at all, fall back to Remake URL
-                    remake_url = 'https://mroyale.net/' + item['src']
-                    exists_in_remake = web_file_exists(remake_url)
-                    if exists_in_remake == True:
-                        content['resource'][index]['src'] = remake_url
-                    elif exists_in_remake == None:
-                        content['resource'][index]['src'] = remake_url
-                        warnings += \
-'Security error on Remake map image, what a surprise.\n\n'
-                    # If it's not in Legacy or Remake, then throw up our hands
+                    exists_in_legacy = web_file_exists(legacy_url)
+                    if exists_in_legacy == True:
+                        content['resource'][index]['src'] = legacy_url
+                    elif exists_in_legacy == None:
+                        content['resource'][index]['src'] = legacy_url
+                        warnings += 'Security error on Legacy map image.\n'
                     else:
-                        warnings += '''Could not expand URL of map image.
+                        # If it's not in Legacy at all, fall back to Remake URL
+                        remake_url = 'https://mroyale.net/' + item['src']
+                        exists_in_remake = web_file_exists(remake_url)
+                        if exists_in_remake == True:
+                            content['resource'][index]['src'] = remake_url
+                        elif exists_in_remake == None:
+                            content['resource'][index]['src'] = remake_url
+                            warnings += \
+'Security error on Remake map image, what a surprise.\n\n'
+                        # If it's not in Legacy or Remake, give up
+                        else:
+                            warnings += '''Could not expand URL of map image.
 Your converted world may not be playable.\n\n'''
+                except requests.exceptions.ConnectionError:
+                    # If no internet, ask the user which map URL to use
+                    use_legacy = bool_dialog('Couldn’t connect to the internet',
+                            ['Deluxifier couldn’t connect to the internet, so \
+you’ll have to answer this question yourself:', 
+                            'Was this world made for Remake or Legacy?'],
+                            'Remake', 'Legacy', icon='warning')
+                    if use_legacy:
+                        legacy_url = \
+'https://raw.githubusercontent.com/mroyale/assets/master/' + item['src']
+                        content['resource'][index]['src'] = legacy_url
+                    else: # remake
+                        remake_url = 'https://mroyale.net/' + item['src']
+                        content['resource'][index]['src'] = remake_url
 
             # Convert obj path to relative path so it uses the new Deluxe
             # obj and not the Legacy/Remake one which is now glitched
@@ -1291,7 +1229,7 @@ def convert_folder():
 
     # Set up progress updates
     heading = Label(main_frame, text='Converting %i files' % len(files),
-            font=f_heading, bg=COLORS['BG'])
+            font=f_heading, bg=colors['BG'])
     heading.place(x=0, y=0)
     subhead = Label()
 
@@ -1416,13 +1354,23 @@ worlds converted with it will work.'
 def crash(exctype=None, excvalue=None, tb=None):
     import tkinter.messagebox as messagebox
     try:
-        bomb = PhotoImage(file='ui/bomb.png')
+        bomb = PhotoImage(file='ui/bomb.gif')
         window.iconphoto(False, bomb)
     finally:
-        messagebox.showerror(window, 
-            message='''An error has occurred:
-%s''' % (excvalue))
-        exit_app()
+        # Tkinter doesn't have a "public" way to show the error dialog I want,
+        # but the options are hidden under the hood. 
+        # Code based on Tkinter messagebox.py
+        btn = messagebox._show('Error', '''An error has occurred.
+%s: %s''' % (str(exctype)[8:-2], excvalue), 
+messagebox.ERROR, messagebox.ABORTRETRYIGNORE)
+        # btn might be a Tcl index object, so convert it to a string
+        btn = str(btn)
+        if btn == 'ignore':
+            return
+        elif btn == 'retry':
+            menu()
+        else: # abort
+            exit_app()
 
 def exit_app():
     window.destroy()
@@ -1465,4 +1413,4 @@ into the list of files in the left sidebar.''')
 
 except Exception as e:
     ei = sys.exc_info()
-    crash(None, ei[1])
+    crash(ei[0], ei[1])

@@ -20,12 +20,25 @@ There are two main ways to run this program:
 ## ⚠️ WARNING - HEALTH AND SAFETY
 Playing converted worlds may get you banned from MR Deluxe! This appears to be a false positive in the game's anticheat. This bug is known to be triggered by converting the Royale City world. It may affect other worlds with vertical scrolling or Remake-only features. I am not responsible if this program lands you in jail!!!
 
-Also: MR Deluxe is in closed alpha. As such, while I am reasonably confident in the stability of the converter at this point, I’m still calling this a public beta. The world format may change at any time. Don't delete your old world files (even after the game is out).
-
 ## Other Known Bugs
 - MRDX will not load music in converted worlds
 - All worlds use the Deluxe obj sheet
 - assets.json animations will play at 2× speed since the game is now 60fps
+
+## System Requirements
+This program doesn't have a very attractive interface. This is because I'd rather spend my time making the program *work*. In fact, it'll work on basically any operating system released in the last 15 years.
+
+The online version will work on any operating system that can run a modern web browser. Here are the recommended browsers for various versions:
+* MacOS 10.7 or later
+** MacOS 10.12– : Firefox
+** MacOS 10.7–10.11: Chromium Legacy
+* Windows 7 or later (Firefox)
+
+The offline version will run on any operating system that can run Python 3.5:
+* MacOS 10.5 or later
+* Windows Vista or later
+
+You should also be able to use it on Linux (including Chrome OS), but there are too many variations of that for me to provide any guarantees.
 
 ## Troubleshooting
 
