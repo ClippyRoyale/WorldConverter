@@ -135,3 +135,8 @@ Version 2.2.1 (Mar. 21, 2023):
       * More helpful bomb dialog that allows you to abort, retry, or ignore
   * Automatically detect if using Replit and enter fullscreen if so
   - Removed outdated disclaimers about MR Deluxe being in beta
+
+Version 2.2.2 (Mar. 25, 2023):
+  * Readded union type hinting in a way compatible with Py3.5+
+  * Fixed interface bug that was breaking dialog boxes
+  - Removed dialog()

@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 2.2.1
+Version 2.2.2
 
 Copyright © 2022–2023 clippy#4722
 
@@ -26,6 +26,7 @@ KNOWN BUGS: See warnings_bugs() in code for list
 
 import codecs, json, sys, os, requests
 import PIL.ImageTk
+from typing import Union
 from time import time
 from glob import glob
 from tkinter import *
@@ -34,7 +35,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '2.2.1'
+VERSION = '2.2.2'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -199,9 +200,8 @@ def update_subhead(subhead, current, target):
 
 # Displays a dialog box with one or more buttons to the user. Holds until the
 # user clicks a button. Returns the name of the button clicked.
-# Intended to replace dialog().
 # icon is one of: info, question, warning, error, done, bomb
-def button_dialog(title:str, message,
+def button_dialog(title:str, message:Union[str, list],
                   buttons=['Cancel', 'Okay'], *, icon:str=None):
     cls()
 
@@ -211,7 +211,7 @@ def button_dialog(title:str, message,
     # it can return
     def button_event(index:int):
         nonlocal button_clicked
-        button_clicked = index
+        button_clicked = buttons[index]
 
     dialog_icon = None
     if icon in icons:
@@ -276,7 +276,7 @@ def button_dialog(title:str, message,
 # Simplified version of button_dialog() that only allows 2 buttons and returns
 # a boolean value. If the user clicks the right/Okay button, return True.
 # Otherwise, if the user clicks the left/Cancel button, return False.
-def bool_dialog(title:str, message,
+def bool_dialog(title:str, message:Union[str, list],
                   button1='Cancel', button2='Okay', *, icon:str=None):
     button_name = button_dialog(title, message, [button1, button2], icon=icon)
     if button_name == button2:
@@ -284,42 +284,20 @@ def bool_dialog(title:str, message,
     else:
         return False
     
-# Single-button dialog. Returns None.
-def simple_dialog(title:str, message, button='Okay', *, icon:str=None):
-    button_dialog(title, message, [button], icon=icon)
-
-# Legacy function to display a dialog box in the window, 
-# with text and buttons. Use in new code is not recommended,
-# as simple_dialog, bool_dialog, and button_dialog make code easier to follow.
-def dialog(heading_text, msg_text, bottom_text, icon_name, 
-        btn1_text, btn1_event, btn2_text=None, btn2_event=None):
-    cls()
-
-    if isinstance(msg_text, str): 
-        # Convert to list if message is only one line / a string
-        msg_text = [msg_text]
-
-    if bottom_text:
-        msg_text.append('') # Blank line to separate from main text
-        if type(bottom_text) == list:
-            msg_text.extend(bottom_text)
-        else: # i.e. if string
-            msg_text.append(bottom_text)
-
-    # Starting in version 5.0, this deprecated function is just a wrapper for
-    # bool_dialog.
-    if btn2_text:
-        answer = bool_dialog(heading_text, msg_text, btn1_text, btn2_text, 
-                            icon=icon_name)
-
-        # Replicate function-executing behavior of original dialog()
-        if answer:
-            btn2_event()
-        else:
-            btn1_event()
+# yn_dialog is like bool_dialog but the buttons' return values are reversed.
+# The left/Yes button returns True, and the right/No button returns false.
+def yn_dialog(title:str, message:Union[str, list],
+                  button1='Yes', button2='No', *, icon:str=None):
+    button_name = button_dialog(title, message, [button1, button2], icon=icon)
+    if button_name == button1:
+        return True
     else:
-        simple_dialog(heading_text, msg_text, btn1_text, icon=icon_name)
-        btn1_event()
+        return False
+    
+# Single-button dialog. Returns None.
+def simple_dialog(title:str, message:Union[str, list], 
+                  button='Okay', *, icon:str=None):
+    button_dialog(title, message, [button], icon=icon)
 
 #### END UI CODE ####
 
@@ -1188,7 +1166,8 @@ Please tell Clippy!'''
         done_heading = 'Done in %f seconds' % (t2-t1)
 
     # Tell the user the conversion is done
-    dialog(done_heading, warnings, None, 'done', 'Continue', menu)
+    simple_dialog(done_heading, warnings, 'Continue', icon='done')
+    menu()
 
 def convert_folder():
     status_complete()
@@ -1268,10 +1247,10 @@ def convert_folder():
     # because we're not converting a single world
 
     # Tell the user the conversion is done
-    dialog(done_heading, 
+    simple_dialog(done_heading, 
             'If there were any converter warnings, they have been logged to \
-_WARNINGS.LOG.',
-            None, 'done', 'Continue', menu)
+_WARNINGS.LOG.', 'Continue', icon='done')
+    menu()
 
 def setup():
     #### INITIAL GUI SETUP ####
@@ -1336,7 +1315,7 @@ def toggle_reverse():
 'Reverse Mode is OFF (converting to DELUXE format)')
 
 def warnings_bugs():
-    dialog('WARNING - HEALTH AND SAFETY', 
+    simple_dialog('WARNING - HEALTH AND SAFETY', 
         [
             '<b>Playing converted worlds may cause false positives in the \
 game’s anticheat. I am not responsible if this program gets you banned!',
@@ -1348,8 +1327,8 @@ game’s anticheat. I am not responsible if this program gets you banned!',
 released in the near future.''',
             'Reverse Mode is in beta, and I make no guarantees that any \
 worlds converted with it will work.'
-        ], None, 'warning',
-        'Okay', menu)
+        ], icon='warning')
+    menu()
 
 def crash(exctype=None, excvalue=None, tb=None):
     import tkinter.messagebox as messagebox
