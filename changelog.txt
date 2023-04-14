@@ -140,3 +140,8 @@ Version 2.2.2 (Mar. 25, 2023):
   * Readded union type hinting in a way compatible with Py3.5+
   * Fixed interface bug that was breaking dialog boxes
   - Removed dialog()
+
+Version 2.3.0 (Apr. 13, 2023):
+  + Message of the Day dialog displays a message I can customize on Github
+      * May be used for emergency messages (e.g. bug warnings) or just news
+  * Dialog box fix from Skin Converter

@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 2.2.2
+Version 2.3.0
 
 Copyright © 2022–2023 clippy#4722
 
@@ -25,6 +25,7 @@ KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
 import codecs, json, sys, os, requests
+import urllib.request
 import PIL.ImageTk
 from typing import Union
 from time import time
@@ -35,7 +36,7 @@ import tkinter.filedialog as filedialog
 
 #### BEGIN UI SETUP ####
 
-VERSION = '2.2.2'
+VERSION = '2.3.0'
 
 window = Tk()
 window.wm_title('Deluxifier v' + VERSION)
@@ -84,7 +85,7 @@ steps = [
     Label(side_frame, text='● Open & Save Paths', 
         fg=colors[step_status[1]], 
         justify='left', bg=colors['BG']),
-    Label(side_frame, text='● Run Script', fg=colors[step_status[2]], 
+    Label(side_frame, text='● Run Converter', fg=colors[step_status[2]], 
         justify='left', bg=colors['BG']),
     Label(side_frame, text='● Summary', fg=colors[step_status[3]], 
         justify='left', bg=colors['BG']),
@@ -247,25 +248,25 @@ def button_dialog(title:str, message:Union[str, list],
         dialog_message[index].place(x=0, y=next_y)
         next_y += dialog_message[-1].winfo_reqheight() + 4
 
-    # Reworked dialogs won't support bottom text 
+    # Reworked dialogs don't support bottom text 
     # (it adds unnecessary complexity).
 
-    dialog_buttons = []
-    for i in buttons:
-        dialog_buttons.append(Button(main_frame, text=i, 
-                                     highlightbackground=colors['BG']))
+    button_objs = []
+    for index, item in enumerate(buttons):
+        # Create new button object
+        new_btn = Button(main_frame, text=item, 
+                highlightbackground=colors['BG'],
+                command=lambda c=index: button_event(c))
+        # Add to button obj list
+        button_objs.append(new_btn)
 
     # Place buttons one by one on the frame, aligned right and starting with
     # the rightmost button
     next_button_x = 470
-    for i in reversed(dialog_buttons):
+    for i in reversed(button_objs):
         i.place(x=next_button_x, y=310, anchor=SE)
         next_button_x -= i.winfo_reqwidth()
         next_button_x -= 10 # a little extra space between buttons
-
-    # Set event bindings for all buttons
-    for index, item in enumerate(dialog_buttons):
-        item.bind('<ButtonRelease-1>', lambda _: button_event(index))
 
     # Wait for user to click a button
     while button_clicked == None:
@@ -317,9 +318,10 @@ INFERNO = 0b00001
 #   last common ancestor of Deluxe + all others
 # - c for Classic (by Igor & Cyuubi; 2.1.1 - 3.7.0), 
 #   last common ancestor of Remake and Legacy
-# - r for Remake (by GoNow; no version numbers)
-# - l for Legacy (by Terminal and Casini Loogi; 3.7.1 - 4.5.0)
-# - d for Deluxe (by Terminal and Casini Loogi)
+# - r for Remake (by GoNow; no version numbers),
+#   new codebase but mostly backwards-compatible with Classic levels
+# - l for Legacy (by Terminal & Casini Loogi; 3.7.1 - 4.6.3)
+# - d for Deluxe (by Terminal & Casini Loogi)
 # EXAMPLES:
 # - 0b11011 means it's compatible with everything but Remake
 # - Semisolid at ID 6 is only compatible with Deluxe (0b10000) because it had a
@@ -479,6 +481,9 @@ reverse_mode = False
 convert_fail = False
 
 # Test if an image file exists on the web
+# Return True if the specified string is a valid URL.
+# Return False if attempting to visit the URL returns an HTTP error.
+# Return None if GoNow forgot to renew his TLS certificate again.
 def web_file_exists(path):
     try:
         r = requests.head(path)
@@ -619,7 +624,7 @@ content['assets']
                         content['resource'][index]['src'] = legacy_url
                     elif exists_in_legacy == None:
                         content['resource'][index]['src'] = legacy_url
-                        warnings += 'Security error on Legacy map image.\n'
+                        warnings += 'Security warning on Legacy map image.\n\n'
                     else:
                         # If it's not in Legacy at all, fall back to Remake URL
                         remake_url = 'https://mroyale.net/' + item['src']
@@ -629,7 +634,7 @@ content['assets']
                         elif exists_in_remake == None:
                             content['resource'][index]['src'] = remake_url
                             warnings += \
-'Security error on Remake map image, what a surprise.\n\n'
+'Security warning on Remake map image, what a surprise.\n\n'
                         # If it's not in Legacy or Remake, give up
                         else:
                             warnings += '''Could not expand URL of map image.
@@ -896,20 +901,6 @@ Are you sure it’s a world?\n%s\n''' % open_path
             error_msg = '''The selected file appears to already be in Legacy \
 format.\n%s\n''' % open_path
             return error_msg
-        
-        # # Add extra effects sprite sheet that's not in Legacy or Remake
-        # content['resource'].append({"id":"effects",
-        #         "src":"img/game/smb_effects.png"})
-
-        # # Delete world data that isn't in Deluxe
-        # if 'vertical' in content:
-        #     del content['vertical']
-        # if 'shortname' in content:
-        #     del content['shortname']
-        # if 'musicOverridePath' in content:
-        #     del content['musicOverridePath']
-        # if 'soundOverridePath' in content:
-        #     del content['soundOverridePath']
 
         # Turn lobbies into regular worlds so they don't crash the game
         content['type'] = 'game'
@@ -1224,12 +1215,12 @@ def convert_folder():
             time_last_refresh = time()
             time_since_refresh = 0
 
-        filename = item.split('/')[-1] # Get just the filename w/o the path
+        filename = item.split(os.sep)[-1] # Get just the filename w/o the path
 
         if reverse_mode:
-            warnings += reverse_convert(item, save_dir+'/'+filename) + '\n\n'
+            warnings += reverse_convert(item, save_dir+os.sep+filename) + '\n\n'
         else:
-            warnings += convert(item, save_dir + '/' + filename) + '\n\n'
+            warnings += convert(item, save_dir + os.sep + filename) + '\n\n'
 
     # Save all warnings to a log file in the "converted" folder
     log_file = open(save_dir + '/_WARNINGS.LOG', 'a')
@@ -1271,6 +1262,9 @@ def setup():
     # Note that the position of anything with main_frame as parent is 
     # RELATIVE (i.e. 160 will be added to x)
 
+    # Display message of the day
+    motd()
+    # Show menu
     menu()
         
 def menu():
@@ -1324,11 +1318,51 @@ game’s anticheat. I am not responsible if this program gets you banned!',
 - All worlds use the Deluxe obj sheet
 - assets.json animations will play at 2× speed since the game is now 60fps
 - Conveyors (from Remake) are not yet converted properly. A fix will be \
-released in the near future.''',
+released in the near future.
+- Vines may not render properly.''',
             'Reverse Mode is in beta, and I make no guarantees that any \
 worlds converted with it will work.'
         ], icon='warning')
     menu()
+
+# Download and display the online Message of the Day
+'''
+For each line, everything before the first space is the full list versions that should show the message. The rest of the line is the message itself.
+The program displays a maximum of 1 MOTD -- the first that matches its version.
+
+EXAMPLE MOTD FORMAT:
+
+2.2.1_2.2.2 WARNING: Please update your program to 2.3.0 or later. \
+    The version you're currently using has a bug that could damage your files.
+* We will only be adding the W.
+
+This version of the program would display "We will only be adding the W."
+because it doesn't match any of the versions specified for the warning.
+'''
+def motd():
+    motd_url = 'https://raw.githubusercontent.com/WaluigiRoyale/\
+Deluxifier/main/motd.txt'
+    try:
+        # Download and read MOTD
+        urllib.request.urlretrieve(motd_url, 'motd.txt')
+        motd_file = open('motd.txt')
+        motd_lines = motd_file.read().splitlines()
+        for i in range(len(motd_lines)):
+            # Split into version and message
+            motd_lines[i] = motd_lines[i].split(' ', 1) 
+            if (len(motd_lines[i]) == 2) and \
+                    ((VERSION in motd_lines[i][0]) or \
+                        (motd_lines[i][0] == '*')):
+                motd = motd_lines[i][1]
+                motd_continue = bool_dialog('News!', motd, 'Exit', 'Continue')
+                if motd_continue:
+                    return
+                else:
+                    exit_app()
+    except:
+        # If the internet isn't cooperating or the MOTD file is malformed, 
+        # no big deal, just skip it
+        pass
 
 def crash(exctype=None, excvalue=None, tb=None):
     import tkinter.messagebox as messagebox
