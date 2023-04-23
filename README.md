@@ -28,13 +28,13 @@ Playing converted worlds may get you banned from MR Deluxe! This appears to be a
 ## System Requirements
 This program doesn't have a very attractive interface. This is because I'd rather spend my time making the program *work*. In fact, it'll work on basically any operating system released in the last 15 years.
 
-The online version will work on any operating system that can run a modern web browser. Here are the recommended browsers for various versions:
+The online (Replit) version will work on any operating system that can run a modern web browser:
 * MacOS 10.7 or later
-** MacOS 10.12– : Firefox
-** MacOS 10.7–10.11: Chromium Legacy
+** MacOS 10.12– : Use Firefox
+** MacOS 10.7–10.11: Use Chromium Legacy
 * Windows 7 or later (Firefox)
 
-The offline version will run on any operating system that can run Python 3.5:
+If you download the source code from this Github project's Releases, it will run on any operating system that can run Python 3.5:
 * MacOS 10.5 or later
 * Windows Vista or later
 
@@ -48,4 +48,4 @@ Try clicking “Stop” then clicking “Run” again. If that doesn’t work, c
 
 ### I downloaded the code, and when I run the program, it's in fullscreen!
 
-This is the source code for the Online Version as seen on Replit. Either download the Offline Version on the Discord, or make sure that you're running the newest Deluxifier version
+This was a problem back when there were two different Online and Offline versions, but not anymore because there's only one version now. Please download the newest version from the "Releases" section in the sidebar.
