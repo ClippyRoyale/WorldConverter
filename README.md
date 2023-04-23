@@ -48,9 +48,4 @@ Try clicking “Stop” then clicking “Run” again. If that doesn’t work, c
 
 ### I downloaded the code, and when I run the program, it's in fullscreen!
 
-This is the source code for the Online Version as seen on Replit. Either download the Offline Version on the Discord, or delete the following lines from the source code:
-
-```
-# UNCOMMENT THIS LINE ON REPLIT BUILDS OR TO RUN THE APP IN FULLSCREEN
-window.attributes('-fullscreen', True)
-```
+This is the source code for the Online Version as seen on Replit. Either download the Offline Version on the Discord, or make sure that you're running the newest Deluxifier version
