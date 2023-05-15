@@ -1,0 +1,1 @@
+u_2.3.0 Version 3.0.0 of Deluxifier is available! This version features improved functionality for converting Remake levels to Deluxe and converting Deluxe levels to older versions. It also allows some Deluxified levels to play correct audio. Visit https://github.com/WaluigiRoyale/Deluxifier/releases to get the update.
