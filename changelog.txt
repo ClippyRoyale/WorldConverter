@@ -145,3 +145,14 @@ Version 2.3.0 (Apr. 13, 2023):
   + Message of the Day dialog displays a message I can customize on Github
       * May be used for emergency messages (e.g. bug warnings) or just news
   * Dialog box fix from Skin Converter
+
+Version 3.0.0 (May 14, 2023):
+  + New main menu allows users to convert between Deluxe, Legacy, and Remake --
+    or have the program automatically detect what version a world was made for
+      * This is thanks to an improved tile database
+      * Edge cases (e.g. conveyors) are handled better by the new database
+      * Seriously, the old system was held together with duct tape
+  + Legacy->Deluxe conversions now retain original audio
+  * Updated the warnings screen
+  - Removed Reverse Mode because the new system is more stable and flexible
+  - Removed Herobrine
