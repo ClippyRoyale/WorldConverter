@@ -1414,7 +1414,7 @@ def exit_app():
 try:
     # Comment out during development if you want crashes to be logged to the
     # console instead of displaying a bomb dialog
-    # window.report_callback_exception = crash
+    window.report_callback_exception = crash
     
     # Determine if we're running on replit
     if os.path.isdir("/home/runner") == True:
@@ -1448,5 +1448,3 @@ into the list of files in the left sidebar.''')
 except Exception as e:
     ei = sys.exc_info()
     crash(ei[0], ei[1])
-
-# TODO: Test audio on Remake and Legacy
