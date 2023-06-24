@@ -17,14 +17,6 @@ There are two main ways to run this program:
 1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python. If you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
 2. Online with Replit. This method is a little clunkier but it’s more beginner-friendly and supports basically any device, including Windows, Mac, Linux, Chromebooks, Android, and iOS. Link: https://replit.com/@WaluigiRoyale/Deluxifier
 
-## ⚠️ WARNING - HEALTH AND SAFETY
-Playing converted worlds may get you banned from MR Deluxe! This appears to be a false positive in the game's anticheat. This bug is known to be triggered by converting the Royale City world. It may affect other worlds with vertical scrolling or Remake-only features. I am not responsible if this program lands you in jail!!!
-
-## Other Known Bugs
-- MRDX will not load music in converted worlds
-- All worlds use the Deluxe obj sheet
-- assets.json animations will play at 2× speed since the game is now 60fps
-
 ## System Requirements
 This program doesn't have a very attractive interface. This is because I'd rather spend my time making the program *work*. In fact, it'll work on basically any operating system released in the last 15 years.
 
