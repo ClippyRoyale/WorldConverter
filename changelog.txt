@@ -161,3 +161,10 @@ Version 3.1.0 (Jun. 24, 2023):
   + Added Rex to database
   + "Update available" header for MOTD if the message is about an update
   - Removed unnecessary sidebar from interface
+
+Version 3.1.1 (Aug. 17, 2023):
+  * Fixed conversion of free-roam levels
+  * Fixed crash bugs that occurred when saving to a folder you aren't allowed
+    to access
+      * "Convert folder" option now saves to working directory instead of 
+        subfolder of selected folder
