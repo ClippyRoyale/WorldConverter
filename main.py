@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 3.1.0
+Version 3.1.1
 
 Copyright © 2022–2023 clippy#4722
 
@@ -24,19 +24,21 @@ CHANGELOG: See changelog.txt
 KNOWN BUGS: See warnings_bugs() in code for list
 '''
 
-import codecs, json, sys, os, requests, webbrowser
+import codecs, json, sys, os, webbrowser
 import urllib.request
-import PIL.ImageTk
 from typing import Union
 from time import time
 from glob import glob
 from tkinter import *
 import tkinter.font as tkfont
 import tkinter.filedialog as filedialog
+# PIP modules:
+import requests
+import PIL.ImageTk # pillow
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.1.0'
+VERSION = '3.1.1'
 
 window = Tk()
 window.wm_title('Deluxifier')
@@ -84,7 +86,8 @@ main_frame.grid_propagate(False)
 menu_heading = Label(main_frame, text='Welcome to Deluxifier', 
         font=f_heading, bg=colors['BG'])
 menu_subhead = Label(main_frame, 
-        text='The community-supported MR Deluxe world converter', bg=colors['BG'])
+        text='The community-supported MR Deluxe world converter', 
+        bg=colors['BG'])
 
 icons = {
     'info': \
@@ -376,7 +379,8 @@ TILE_DATABASE = (
     ('player barrier', 0b10000, 9, -1, -1, (0)),
     ('conveyor left', 0b10000, 14, -1, -1, ('conveyor', 1)),
     ('conveyor right', 0b10000, 15, -1, -1, ('conveyor', 1)),
-    ('item block regen', 0b10000, 26, -1, -1, ('item block infinite', 'item block')),
+    ('item block regen', 0b10000, 26, -1, -1, 
+        ('item block infinite', 'item block')),
     ('warp tile random', 0b10000, 87, -1, -1, (0)),
     ('message block', 0b10000, 241, -1, -1, (1)),
     ('sound block', 0b10000, 239, -1, -1, (0)), 
@@ -582,7 +586,7 @@ def extract_tile(tile):
         # Else, it's a format we just don't recognize at all, so we stick to
         # the default extracted_tile
     except:
-        warnings += 'Failed to convert tile: %s \n' % tile # TODO: Why is this function getting fed "30" ints? (after the last 66-67 solid on Invalid TD Test.json)
+        warnings += 'Failed to convert tile: %s \n' % tile
 
     return extracted_tile
 
@@ -631,7 +635,7 @@ overwrite your existing world files. Please try a different file path.\n%s\n'\
         # File is an image, movie, or other binary
         convert_fail = True
         error_msg = '''The selected file is a binary file such as an image, \
-song, movie, or app, and could not be read.\n%s\n''' % open_path
+song, or movie, and could not be read.\n%s\n''' % open_path
         return error_msg
     except json.decoder.JSONDecodeError:
         # File is not JSON
@@ -643,7 +647,14 @@ Are you sure it’s a world?\n%s\n''' % open_path
     # Create a file at the save path if it doesn't already exist.
     # No overwriting yet because if the user is saving over an existing level
     # and the program crashes, we don't want the user to lose previous progress
-    open(save_path, 'a').close()
+    try:
+        open(save_path, 'a').close()
+    except PermissionError:
+        # If user tries to save to a folder they don't have write access to
+        convert_fail = True
+        error_msg = '''Your computer blocked Deluxifier from saving to the \
+selected folder: \n%s\n''' % save_path
+        return error_msg
 
     try:
         # Auto-detect version of source file if necessary
@@ -729,10 +740,25 @@ getting this result.\n' % open_path.split(os.sep)[-1]
 
         # Vertical (really free-roam) scrolling is now set zone-by-zone
         vertical_world = False
-        if 'vertical' in content:
+        if convert_from.get() == REMAKE and 'vertical' in content:
             if content['vertical'] == 'true':
                 vertical_world = True
             del content['vertical']
+        # If ANY zone in a Deluxe world is set to Vertical or Free-Roam camera,
+        # make the whole world vertical
+        if convert_from.get() == DELUXE and convert_to.get() == REMAKE:
+            # Yup, we gotta loop thru EVERY world, level, and zone
+            for level_i, level in enumerate(content['world']):
+                for zone_i, zone in enumerate(level['zone']):
+                    # If world was vertical, add free-roam camera to each zone
+                    if content['world'][level_i]['zone'][zone_i]['camera'] != 0:
+                        vertical_world = True
+                        break
+                if vertical_world: # Second break after detecting vertical
+                    break
+            # If we detected a vertical zone at any point in the loop,
+            # add the vertical flag to the world
+            content['vertical'] = 'true'
         
         if convert_to.get() == DELUXE:
             # Add extra effects sprite sheet that's not in Legacy or Remake
@@ -745,7 +771,7 @@ getting this result.\n' % open_path.split(os.sep)[-1]
             #         "https://mroyale.net/audio/"
             if convert_from.get() in [LEGACY, CLASSIC, INFERNO]:
                 content["audioOverrideURL"] = \
-                    "https://raw.githubusercontent.com/mroyale/assets/legacy/audio/"
+"https://raw.githubusercontent.com/mroyale/assets/legacy/audio/"
 
             # Delete world data that isn't in Deluxe
             if 'shortname' in content:
@@ -1082,19 +1108,22 @@ def convert_folder():
     files = glob(open_dir + '/*')
     warnings = ''
 
-    # Make a folder to drop all the converted worlds in
-    save_dir = open_dir + '/_converted'
+    # Make a folder (inside the working directory) 
+    # to drop all the converted worlds in
+    save_dir = './converted'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     else:
         # If there's already a subfolder called _converted, 
         # tack a number on the end
         i = 1
-        # Keep trying numbers until we get a folder name that doesn't exist yet
+        # Keep trying numbers until we get a folder name 
+        # that doesn't exist yet
         while os.path.exists(save_dir + str(i)):
             i += 1
-        # Permanently add number to save_dir path then create the folder
+        # Now that we know it works, permanently add the number to save_dir
         save_dir += str(i)
+        # Create the folder with the number that works
         os.makedirs(save_dir)
 
     # Set up progress updates
@@ -1134,8 +1163,9 @@ def convert_folder():
 
     # Tell the user the conversion is done
     simple_dialog(done_heading, 
-            'If there were any converter warnings, they have been logged to \
-_WARNINGS.LOG.', 'Continue', icon='done')
+['All converted worlds have been saved to the folder with the path  “%s”.' % \
+ save_dir, 'If there were any converter warnings, they have been logged to \
+_WARNINGS.LOG.'], 'Continue', icon='done')
     menu()
 
 def setup():
@@ -1255,7 +1285,8 @@ using this tool:',
 
 # Download and display the online Message of the Day
 '''
-For each line, everything before the first space is the full list versions that should show the message. The rest of the line is the message itself.
+For each line, everything before the first space is the full list versions 
+that should show the message. The rest of the line is the message itself.
 The program displays a maximum of 1 MOTD -- the first that matches its version.
 
 EXAMPLE MOTD FORMAT:
