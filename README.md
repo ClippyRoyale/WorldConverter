@@ -1,5 +1,5 @@
 # Deluxifier
-The community-supported MR Deluxe world converter
+The semi-official MR Deluxe world converter
 
 Source code and documentation copyright (C) 2022–2023 clippy#4722 (AKA WaCopyrightInfringio)
 (See https://tinyurl.com/infernopatch for an explanation of my old username.)
