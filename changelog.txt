@@ -168,3 +168,11 @@ Version 3.1.1 (Aug. 17, 2023):
     to access
       * "Convert folder" option now saves to working directory instead of 
         subfolder of selected folder
+
+Version 3.1.2 (Sep. 4, 2023):
+  + PIL (pillow) and requests modules are now automatically installed if they
+    aren't already installed on your computer
+      * If you already have these modules installed, there's no need to update,
+        as the program is otherwise unchanged
+      * The program should now run out of the box without needing to install 
+        those modules manually. Please tell Clippy if you have any issues!
