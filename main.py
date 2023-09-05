@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 3.1.1
+Version 3.1.2
 
 Copyright © 2022–2023 clippy#4722
 
@@ -33,12 +33,22 @@ from tkinter import *
 import tkinter.font as tkfont
 import tkinter.filedialog as filedialog
 # PIP modules:
-import requests
-import PIL.ImageTk # pillow
+# This is probably TERRIBLE coding practice, but this is the easiest way to 
+# make the program run "out of the box" for non-developers.
+try:
+    import requests
+except ModuleNotFoundError:
+    import os
+    os.system('pip3 install requests')
+try:
+    import PIL.Image, PIL.ImageTk # pillow
+except ModuleNotFoundError:
+    import os
+    os.system('pip3 install pillow')
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.1.1'
+VERSION = '3.1.2'
 
 window = Tk()
 window.wm_title('Deluxifier')
@@ -68,7 +78,7 @@ def relative_font_size(multiple):
     base_font_size = tkfont.Font(font='TkDefaultFont').cget('size')
     return int(multiple * base_font_size)
 
-f_italic = tkfont.Font(slant='italic')
+f_italic = tkfont.Font(slant='italic', size=relative_font_size(1))
 f_bold = tkfont.Font(weight='bold', size=relative_font_size(1))
 f_large = tkfont.Font(size=relative_font_size(1.5))
 f_heading = tkfont.Font(weight='bold', size=relative_font_size(1.5))
