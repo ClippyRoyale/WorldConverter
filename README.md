@@ -14,23 +14,25 @@ This is a Python program designed to convert MRoyale Legacy worlds to the update
 
 There are two main ways to run this program:
 
-1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python. If you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
-2. Online with Replit. This method is a little clunkier but you won’t have to install anything, and it supports basically any device, including Windows, Mac, Linux, Chromebooks, Android, and iOS. Link: https://replit.com/@WaluigiRoyale/Deluxifier
+1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python and the “pillow” module. If you don’t know how to do either of these things or you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
+2. Online with Replit. This method is a little clunkier but it supports basically any device, including Windows, Mac, Linux, Chromebooks, Android, and iOS. Link: https://replit.com/@WaluigiRoyale/Deluxifier
 
 ## System Requirements
 This program doesn't have a very attractive interface. This is because I'd rather spend my time making the program *work*. In fact, it'll work on basically any operating system released in the last 15 years.
 
 The online (Replit) version will work on any operating system that can run a modern web browser:
 * MacOS 10.7 or later
-    * MacOS 10.15– : Firefox recommended
-    * MacOS 10.7–10.14: Use Chromium Legacy
-* Windows 10 or later: Firefox recommended
+  * MacOS 10.15– : Use Firefox or Chrome (or Safari on 12.0+)
+  * MacOS 10.7–10.14: Use Chromium Legacy
+* Windows 7 or later
+  * Windows 10– : Use Firefox or Chrome
+  * Windows 7–8.1: User Firefox ESR
 
-If you download the source code from this Github project's Releases, it should run on any operating system that can run Python 3.5:
+If you download the source code from this Github project's Releases, it should run on any operating system that can run Python 3.5 (though I've only tested it as far back as Python 3.7):
 * MacOS 10.5 or later
 * Windows Vista or later
 
-You should also be able to use it on Linux (including Chrome OS), but there are too many variations of that for me to provide any guarantees.
+You should also be able to use it on Linux (including Chrome OS) as well, but there are too many variations of that for me to provide any guarantees.
 
 ## Troubleshooting
 
