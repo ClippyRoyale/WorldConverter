@@ -176,3 +176,12 @@ Version 3.1.2 (Sep. 4, 2023):
         as the program is otherwise unchanged
       * The program should now run out of the box without needing to install 
         those modules manually. Please tell Clippy if you have any issues!
+
+Version 3.2.0 (Oct. 20, 2023):
+  + Added option to convert world to work in both Legacy and Remake
+      * Yeah I know, Remake bad, but this has been on my to-do list for a long
+        time and it's one of the last Major Features I hadn't added yet.
+  * Fixed fallback tile conversion
+      * As it turns out, this had been completely broken since v3.0.0. The
+        fallback code didn't activate at all, and if it did, it would've crashed
+        the program. Whoops!
