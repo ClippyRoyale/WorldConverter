@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 3.1.2
+Version 3.2.0
 
 Copyright © 2022–2023 clippy#4722
 
@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.1.2'
+VERSION = '3.2.0'
 
 window = Tk()
 window.wm_title('Deluxifier')
@@ -62,9 +62,9 @@ app_icon = PhotoImage(file='ui/icon.png')
 window.iconphoto(False, app_icon)
 
 colors = {
-    'red': '#c00000',
+    'red': '#ff0000',
     'green': '#008000',
-    'blue': '#0080ff',
+    'blue': '#0000ff',
     'gray': '#808080',
     'silver': '#c0c0c0',
     # Background color is baby blue to distinguish this app from Skin Converter
@@ -329,71 +329,71 @@ convert_to.set(DELUXE)
 TILE_DATABASE = (
     # The program expects index 0 to be Air and index 1 to be Solid Standard.
     # All other indices do not have a guaranteed definition.
-    ('air', 0b11111, 0, 0, 0, (0)),
-    ('solid standard', 0b11111, 1, 1, 1, (0)),
+    ('air', 0b11111, 0, 0, 0, (0,)),
+    ('solid standard', 0b11111, 1, 1, 1, (0,)),
     # Supported in all versions
-    ('solid bumpable', 0b11111, 2, 2, 2, (0)),
-    ('solid breakable', 0b11111, 3, 3, 3, (0)),
-    ('item block', 0b11111, 17, 17, 17, (0)),
-    ('coin block', 0b11111, 18, 18, 18, (0)),
-    ('coin block multi', 0b11111, 19, 19, 19, (0)),
-    ('item block invisible', 0b11111, 21, 21, 21, (0)),
-    ('coin block invisible', 0b11111, 22, 22, 22, (0)),
-    ('vine block', 0b11111, 24, 24, 24, (0)),
-    ('warp tile', 0b11111, 81, 81, 81, (0)),
-    ('warp pipe down slow', 0b11111, 82, 82, 82, (0)),
-    ('warp pipe right slow', 0b11111, 83, 83, 83, (0)),
-    ('warp pipe down fast', 0b11111, 84, 84, 84, (0)),
-    ('warp pipe right fast', 0b11111, 85, 85, 85, (0)),
-    ('level end warp', 0b11111, 86, 86, 86, (0)),
-    ('flagpole', 0b11111, 160, 160, 160, (0)),
-    ('vine', 0b11111, 165, 165, 165, (0)),
-    ('vote block', 0b11111, 240, 240, 240, (0)),
+    ('solid bumpable', 0b11111, 2, 2, 2, (0,)),
+    ('solid breakable', 0b11111, 3, 3, 3, (0,)),
+    ('item block', 0b11111, 17, 17, 17, (0,)),
+    ('coin block', 0b11111, 18, 18, 18, (0,)),
+    ('coin block multi', 0b11111, 19, 19, 19, (0,)),
+    ('item block invisible', 0b11111, 21, 21, 21, (0,)),
+    ('coin block invisible', 0b11111, 22, 22, 22, (0,)),
+    ('vine block', 0b11111, 24, 24, 24, (0,)),
+    ('warp tile', 0b11111, 81, 81, 81, (0,)),
+    ('warp pipe down slow', 0b11111, 82, 82, 82, (0,)),
+    ('warp pipe right slow', 0b11111, 83, 83, 83, (0,)),
+    ('warp pipe down fast', 0b11111, 84, 84, 84, (0,)),
+    ('warp pipe right fast', 0b11111, 85, 85, 85, (0,)),
+    ('level end warp', 0b11111, 86, 86, 86, (0,)),
+    ('flagpole', 0b11111, 160, 160, 160, (0,)),
+    ('vine', 0b11111, 165, 165, 165, (0,)),
+    ('vote block', 0b11111, 240, 240, 240, (0,)),
     # Added in Cyuubi builds (common ancestor of Remake and Legacy)
     # (sorted by Legacy ID)
-    ('solid damage', 0b11110, 4, 4, 4, (1)),
-    ('semisolid', 0b11110, 6, 5, 5, (0)), 
-    ('semisolid weak', 0b01110, -1, 6, 6, (0)), 
-    ('water surface', 0b01110, -1, 8, 8, ('water', 0)), # pushes you down
-    ('water current', 0b01110, -1, 9, 9, ('water', 0)), # pushes you left/right
+    ('solid damage', 0b11110, 4, 4, 4, (1,)),
+    ('semisolid', 0b11110, 6, 5, 5, (0,)), 
+    ('semisolid weak', 0b01110, -1, 6, 6, (0,)), 
+    ('water surface', 0b01110, -1, 8, 8, ('water', 0,)), # pushes you down
+    ('water current', 0b01110, -1, 9, 9, ('water', 0,)), # pushes you left/right
         # ^ Confirmed REMOVED IN DELUXE: was semisolid if Small; air if Super
-    ('water', 0b11110, 7, 7, 7, (0)),
-    ('item block infinite', 0b11110, 25, 25, 25, (0)),
+    ('water', 0b11110, 7, 7, 7, (0,)),
+    ('item block infinite', 0b11110, 25, 25, 25, (0,)),
     # Added in Remake (sorted by Remake ID)
-    ('solid ice', 0b11100, 10, 10, 10, (1)),
-    ('note block', 0b11100, 11, 11, 11, (1)), 
-        # ^ called "pop block" in Remake but works same
-    ('conveyor', 0b00100, -1, -1, 12, (1)),
+    ('solid ice', 0b11100, 10, 10, 10, (1,)),
+    ('note block', 0b11100, 11, 11, 11, (1,)), 
+        # ^ called "pop block" in Remake but works the same
+    ('conveyor', 0b00100, -1, -1, 12, (1,)),
         # ^ in Deluxe but as 2 different tiles
     # Added in Legacy (sorted by Legacy ID)
-    ('item note block', 0b11000, 12, 12, -1, ('note block', 'item block')),
-    ('ice -> tile', 0b01000, -1, 13, -1, ('ice -> object', 'solid ice', 1)), 
-    ('flip block', 0b11000, 8, 14, -1, ('solid breakable')),
-    ('air damage', 0b11000, 5, 15, -1, ('solid damage', 0)),
-    ('ice -> object', 0b11000, 13, 16, -1, ('solid ice', 1)),
-    ('item block progressive', 0b11000, 20, 20, -1, ('item block')),
-    ('semisolid ice', 0b01000, -1, 23, -1, ('semisolid', 1)),
+    ('item note block', 0b11000, 12, 12, -1, ('note block', 'item block',)),
+    ('ice -> tile', 0b01000, -1, 13, -1, ('ice -> object', 'solid ice', 1,)), 
+    ('flip block', 0b11000, 8, 14, -1, ('solid breakable',)),
+    ('air damage', 0b11000, 5, 15, -1, ('solid damage', 0,)),
+    ('ice -> object', 0b11000, 13, 16, -1, ('solid ice', 1,)),
+    ('item block progressive', 0b11000, 20, 20, -1, ('item block',)),
+    ('semisolid ice', 0b01000, -1, 23, -1, ('semisolid', 1,)),
         # ^ Maybe I should add this to Deluxe? Probably wouldn't be too hard
-    ('item block invisible progressive', 0b11000, 27, 26, -1, ('item block invisible')),
-    ('scroll lock', 0b11000, 30, 30, -1, (0)),
-    ('scroll unlock', 0b11000, 31, 31, -1, (0)),
-    ('checkpoint', 0b01000, -1, 40, -1, (0)),
-    ('warp pipe single slow', 0b11000, 93, 87, -1, (1)),
-    ('warp pipe single fast', 0b11000, 94, 88, -1, (1)),
-    ('warp pipe left slow', 0b11000, 89, 89, -1, (1)),
-    ('warp pipe left fast', 0b11000, 90, 90, -1, (1)),
-    ('warp pipe up slow', 0b11000, 91, 91, -1, (1)),
-    ('warp pipe up fast', 0b11000, 92, 92, -1, (1)),
-    ('flagpole level end warp', 0b01000, -1, 161, -1, ('level end warp')),
+    ('item block invisible progressive', 0b11000, 27, 26, -1, ('item block invisible',)),
+    ('scroll lock', 0b11000, 30, 30, -1, (0,)),
+    ('scroll unlock', 0b11000, 31, 31, -1, (0,)),
+    ('checkpoint', 0b01000, -1, 40, -1, (0,)),
+    ('warp pipe single slow', 0b11000, 93, 87, -1, (1,)),
+    ('warp pipe single fast', 0b11000, 94, 88, -1, (1,)),
+    ('warp pipe left slow', 0b11000, 89, 89, -1, (1,)),
+    ('warp pipe left fast', 0b11000, 90, 90, -1, (1,)),
+    ('warp pipe up slow', 0b11000, 91, 91, -1, (1,)),
+    ('warp pipe up fast', 0b11000, 92, 92, -1, (1,)),
+    ('flagpole level end warp', 0b01000, -1, 161, -1, ('level end warp',)),
     # Added in Deluxe (sorted by Deluxe ID)
-    ('player barrier', 0b10000, 9, -1, -1, (0)),
-    ('conveyor left', 0b10000, 14, -1, -1, ('conveyor', 1)),
-    ('conveyor right', 0b10000, 15, -1, -1, ('conveyor', 1)),
+    ('player barrier', 0b10000, 9, -1, -1, (0,)),
+    ('conveyor left', 0b10000, 14, -1, -1, ('conveyor', 1,)),
+    ('conveyor right', 0b10000, 15, -1, -1, ('conveyor', 1,)),
     ('item block regen', 0b10000, 26, -1, -1, 
-        ('item block infinite', 'item block')),
-    ('warp tile random', 0b10000, 87, -1, -1, (0)),
-    ('message block', 0b10000, 241, -1, -1, (1)),
-    ('sound block', 0b10000, 239, -1, -1, (0)), 
+        ('item block infinite', 'item block',)),
+    ('warp tile random', 0b10000, 87, -1, -1, (0,)),
+    ('message block', 0b10000, 241, -1, -1, (1,)),
+    ('sound block', 0b10000, 239, -1, -1, (0,)), 
         # ^ unused in Legacy at diff. ID
 )
 
@@ -476,13 +476,19 @@ def convert_tile(old_td:list):
     new_td[3] = get_id_for_version(db_entry)
 
     # If tile not compatible with target version, follow fallback chain
-    if not (db_entry[1] | convert_to.get()):
+    if not (db_entry[1] & convert_to.get()):
         for i in db_entry[5]: # tuple of possible fallback tiles
             if i == 0 or i == 1: 
                 # In the database, 0 and 1 are accepted shorthands for 
                 # air and solid, respectively -- for convenience
                 new_td[3] = i
                 # These will always be the last link in the fallback chain
+
+                # When loop is done, leave note that tile was replaced
+                replacement = (db_entry[0], TILE_DATABASE[i][0])
+                if replacement not in replacement_list:
+                    replacement_list.append(replacement)
+
                 break
             else:
                 fallback_entry = get_tile_by_name(i)
@@ -525,13 +531,14 @@ def convert_tile(old_td:list):
                         new_td[4] = 0
 
                     # END SPECIAL CASES
+
+                    # When loop is done, leave note that tile was replaced
+                    replacement = (db_entry[0], fallback_entry[0])
+                    if replacement not in replacement_list:
+                        replacement_list.append(replacement)
+
                     break
                 # Otherwise, do another round of the loop
-
-        # When loop is done, leave note that tile was replaced
-        replacement = (db_entry[0], fallback_entry[0])
-        if replacement not in replacement_list:
-            replacement_list.append(replacement)
     # End fallback code
 
     if convert_to.get() == DELUXE:
@@ -911,7 +918,8 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                     
                     # Object is incompatible if it's either:
                     #   - Not in the list of all objects
-                    #   - In the list but not flagged as supported in Deluxe
+                    #   - In the list but not flagged as supported in
+                    #     the target version
                     if zone['obj'][obj_i]['type'] not in ALL_OBJECTS or not \
                             ALL_OBJECTS[zone['obj'][obj_i]['type']][1] & \
                             convert_to.get():
@@ -1012,7 +1020,7 @@ Are you sure it’s a world?\n%s\n''' % open_path
     # Close the file to prevent bugs that occur in large levels
     write_file.close()
 
-    warnings += 'YOUR CONVERTED WORLD HAS BEEN SAVED TO:\n' + save_path + '\n'
+    warnings += 'YOUR CONVERTED WORLD HAS BEEN SAVED TO:\n'+save_path+'\n\n'
 
     # Report the IDs of incompatible objects that were removed
     if removed_objects:
@@ -1259,8 +1267,8 @@ def menu():
     col2_options = [
         # Radiobutton(main_frame, text='InfernoPlus builds', bg=colors['BG'],
         #             variable=convert_to, value=INFERNO),
-        # Radiobutton(main_frame, text='Cyuubi builds', bg=colors['BG'],
-        #             variable=convert_to, value=CLASSIC),
+        Radiobutton(main_frame, text='Cross-platform (R/L)', bg=colors['BG'],
+                    variable=convert_to, value=CLASSIC),
         Radiobutton(main_frame, text='Remake', bg=colors['BG'],
                     variable=convert_to, value=REMAKE),
         Radiobutton(main_frame, text='Legacy', bg=colors['BG'],
@@ -1284,12 +1292,13 @@ converted-but-otherwise-untouched levels into public rotation.',
             '<i>You may encounter the following issues with levels converted \
 using this tool:',
             '''\
-- Music may not load (except for Legacy->Deluxe conversions)
+- Music may not load (except for Legacy->Deluxe conversions).
 - assets.json animations will play at 2× speed in Deluxe since the game is now \
-60fps
+60fps. Similarly, worlds converted FROM Deluxe will play animations
+at ½× speed.
 - Worlds converted to/from Deluxe will use the target version’s object sheet \
-(e.g. Legacy->Deluxe will use Deluxe obj)
-- Vines may not render properly in worlds converted to/from Deluxe'''
+(e.g. Legacy->Deluxe will use Deluxe obj).
+- Vines may not render properly in worlds converted to/from Deluxe.'''
         ], icon='warning')
     menu()
 
@@ -1379,10 +1388,6 @@ try:
     # Determine if we're running on replit
     if os.path.isdir("/home/runner") == True:
         import tkinter.messagebox as messagebox
-
-        # Get screen width and height
-        screen_width = window.winfo_screenwidth()
-        screen_height = window.winfo_screenheight()
 
         # Ask user to enter fullscreen
         messagebox.showinfo(window, 
