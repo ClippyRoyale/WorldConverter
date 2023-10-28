@@ -169,7 +169,7 @@ Version 3.1.1 (Aug. 17, 2023):
       * "Convert folder" option now saves to working directory instead of 
         subfolder of selected folder
 
-Version 3.1.2 (Sep. 4, 2023):
+Version 3.1.2 (Sep. 4, 2023 / OFFLINE ONLY):
   + PIL (pillow) and requests modules are now automatically installed if they
     aren't already installed on your computer
       * If you already have these modules installed, there's no need to update,
@@ -185,3 +185,9 @@ Version 3.2.0 (Oct. 20, 2023):
       * As it turns out, this had been completely broken since v3.0.0. The
         fallback code didn't activate at all, and if it did, it would've crashed
         the program. Whoops!
+
+Version 3.2.1 (Oct. 27, 2023): The Warp Patch
+  + Adjust position of warp ID 3 so you don't get warped out at the wrong 
+    location in converted levels
+  + Change warp IDs 5 and 6 (up-no-offset and down-no-offset) to 1 and 2
+    in versions that don't have no-offset warps (i.e. Remake)
