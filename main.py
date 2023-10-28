@@ -1,6 +1,6 @@
 '''
 DELUXIFIER — A Python-based MRDX world converter
-Version 3.2.0
+Version 3.2.1
 
 Copyright © 2022–2023 clippy#4722
 
@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.2.0'
+VERSION = '3.2.1'
 
 window = Tk()
 window.wm_title('Deluxifier')
@@ -557,6 +557,8 @@ def convert_tile(old_td:list):
 # Return None if GoNow forgot to renew his TLS certificate again.
 def web_file_exists(path:str):
     try:
+        # This is the only part of the code that requires the requests module!
+        # It would be nice if I could find a way to do this with urllib.
         r = requests.head(path)
         return r.status_code == requests.codes.ok
     except requests.exceptions.SSLError: 
@@ -935,6 +937,37 @@ getting this result.\n' % open_path.split(os.sep)[-1]
 
                     # STEP
                     obj_i += 1
+
+                # TODO: 
+                # Adjust position of left warp exits
+                # Remake and Legacy have a bug where you need to place a warp
+                # three tiles right of the pipe if you want the player to exit
+                # in the right place. Deluxe fixed this bug, so we need to
+                # shift any left warps in the zone
+                for warp in zone['warp']:
+                    # Replace no-offset warps if converting to anything other
+                    # than Deluxe or Legacy
+                    if convert_to.get() < LEGACY:
+                        if warp['data'] == 5:
+                            warp['data'] = 1
+                        elif warp['data'] == 6:
+                            warp['data'] = 2
+                    if warp['data'] == 3:
+                        if convert_to.get() == DELUXE:
+                            if warp['pos'] % 65536 >= 3:
+                                # Shift 3 left to "correct" position
+                                # (though it's still 1 tile left of
+                                # what I'd expect)
+                                warp['pos'] -= 3
+                            else:
+                                # If warp is all the way at the left for some
+                                # reason, clip its x tile to 0
+                                warp['pos'] -= (warp['pos'] % 65536)
+                        elif convert_from.get() == DELUXE:
+                            # Shift 3 right to "incorrect" position
+                            # Note that warps CAN be placed outside the zone 
+                            # as long as they're to the RIGHT
+                            warp['pos'] += 3
 
                 # Two different conversion options based on if level has layers
                 if 'layers' in zone:
