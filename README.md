@@ -1,7 +1,6 @@
-# Mario Royale World Converter
+# MR World Converter
 
-Source code and documentation copyright (C) 2022–2023 clippy#4722 (AKA WaCopyrightInfringio)
-(See https://tinyurl.com/infernopatch for an explanation of my old username.)
+Source code and documentation copyright (C) 2022–2024 ClippyRoyale
 
 # Quick start link: https://replit.com/@WaluigiRoyale/Deluxifier
 
