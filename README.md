@@ -1,5 +1,4 @@
-# Deluxifier
-The semi-official MR Deluxe world converter
+# Mario Royale World Converter
 
 Source code and documentation copyright (C) 2022–2023 clippy#4722 (AKA WaCopyrightInfringio)
 (See https://tinyurl.com/infernopatch for an explanation of my old username.)
@@ -14,7 +13,7 @@ This is a Python program designed to convert MRoyale Legacy worlds to the update
 
 There are two main ways to run this program:
 
-1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python and the “pillow” module. If you don’t know how to do either of these things or you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
+1. On your computer. The app will run faster and look better but some programming experience is recommended. You’ll need to install Python from https://python.org. If you aren’t allowed to install programs on your computer (e.g. because it’s a school computer), try option 2...
 2. Online with Replit. This method is a little clunkier but it supports basically any device, including Windows, Mac, Linux, Chromebooks, Android, and iOS. Link: https://replit.com/@WaluigiRoyale/Deluxifier
 
 ## System Requirements
@@ -26,7 +25,7 @@ The online (Replit) version will work on any operating system that can run a mod
   * MacOS 10.7–10.14: Use Chromium Legacy
 * Windows 7 or later
   * Windows 10– : Use Firefox or Chrome
-  * Windows 7–8.1: Use Firefox ESR
+  * Windows 7–8.1: User Firefox ESR
 
 If you download the source code from this Github project's Releases, it should run on any operating system that can run Python 3.5 (though I've only tested it as far back as Python 3.7):
 * MacOS 10.5 or later

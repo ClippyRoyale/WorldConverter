@@ -197,13 +197,31 @@ Version 3.2.2 (Nov. 26, 2023):
     incorrectly (specifically, conveyors in R->D conversions)
   * App icon is now less blurry
   * Tweaked the yellow "!" warning icon
-    * The other icons look the same but they've been losslessly compressed so 
-      they take up less space
+      * The other icons look the same but they've been losslessly compressed so 
+        they take up less space
   - Removed Replit files from the GitHub
-    * I’ve long since given up on Replit–GitHub integration
-    * The source code is now named “deluxifier.py” instead of “main.py”
-    * Just from the image compression, the size of the Deluxifier folder was
-      reduced by 25%. With the Replit files removed, that goes up to 99.7%! 
-      (68.4 MB -> 146 KB)
+      * I’ve long since given up on Replit–GitHub integration
+      * The source code is now named “deluxifier.py” instead of “main.py”
+      * Just from the image compression, the size of the Deluxifier folder was
+        reduced by 25%. With the Replit files removed, that goes up to 99.7%! 
+        (68.4 MB -> 146 KB)
   - Removed third-party module installation requirements (PIL and requests)
   - Removed Herobrine
+
+Version 3.3.0 (Mar. 11, 2023):
+  + Reworked object database to address conflicts between Legacy & Deluxe IDs
+  + Added objects from latest Legacy updates to database
+      * Including: rotodisc, rex, cheep cheep, thwomp, path platform
+  + Add flag objects to Remake levels that have flagpoles but no flags
+      * Remake STILL doesn't even show flag sprites, but Legacy requires the
+        flag object to exist for level completion to work properly
+      * Converter will locate the flagpole top of the flagpole and place the 
+        flag there
+  * Renamed from "Deluxifier" to "World Converter"
+  * Changed default settings from Auto->Deluxe to Auto->Legacy
+  * Fixed Deluxe assets URL to point to GitHub instead of the now-deactivated
+    live server
+      * So yes, Deluxe levels will still be playable in Legacy or Remake if you 
+        convert them (as long as they don't use Discord attachments)
+  * Fixed UI refresh bug (the same one fixed in Skin Converter 7.2.0)
+  * Code cleanup
