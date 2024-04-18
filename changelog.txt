@@ -240,3 +240,8 @@ Version 3.4.0 (Apr. 17, 2024):
     if the zone exceeds the game's height limit
   * Improved detection of Remake vs. Legacy worlds
       * Fixed outdated netcode in version detection
+
+Version 3.4.1 (Apr. 18, 2024):
+  + Added special case for Legacy<->Deluxe cheep cheep color variants
+  * Progressive item box conversion is now optional
+      * Untick the box on the main menu if you want to leave item boxes as is
