@@ -1,4 +1,5 @@
-DELUXIFIER CHANGELOG
+WORLD CONVERTER CHANGELOG
+(formerly Deluxifier)
 
 Version 0.0 (Sep. 1, 2022): Preliminary version; based on sample world files.
     Converted worlds cannot be used in-game yet.
@@ -208,7 +209,7 @@ Version 3.2.2 (Nov. 26, 2023):
   - Removed third-party module installation requirements (PIL and requests)
   - Removed Herobrine
 
-Version 3.3.0 (Mar. 11, 2023):
+Version 3.3.0 (Mar. 11, 2024):
   + Reworked object database to address conflicts between Legacy & Deluxe IDs
   + Added objects from latest Legacy updates to database
       * Including: rotodisc, rex, cheep cheep, thwomp, path platform
@@ -225,3 +226,17 @@ Version 3.3.0 (Mar. 11, 2023):
         convert them (as long as they don't use Discord attachments)
   * Fixed UI refresh bug (the same one fixed in Skin Converter 7.2.0)
   * Code cleanup
+
+Version 3.4.0 (Apr. 17, 2024):
+  + Added new objects to Legacy's list: shell, drybones, goombrat, boo, firebro
+  + Added new Legacy tiles: player/enemy barriers, half tiles
+  + Legacy worlds can now use vertical and free-roam cameras
+  + Added relative warp tiles to Deluxe database
+      * Whoops, I forgot them this whole time
+  + Item blocks containing a mushroom or fire flower are now converted to 
+    progressive item blocks when converting to Legacy
+      * For this reason, you can now convert "from Legacy to Legacy"
+  * Vertical worlds in Remake now only set individual L/D zones to free-roam 
+    if the zone exceeds the game's height limit
+  * Improved detection of Remake vs. Legacy worlds
+      * Fixed outdated netcode in version detection

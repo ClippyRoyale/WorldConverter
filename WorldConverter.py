@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.3.0
+Version 3.4.0
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.3.0'
+VERSION = '3.4.0'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -58,10 +58,12 @@ colors = {
     'BG': '#e0f0ff',
 }
 
-# Different platforms use different default font sizes.
-# Get this system's default size to use as a base. 
-# All other font sizes will be a multiple of it.
 def relative_font_size(multiple:Union[int,float]):
+    '''
+    Different platforms use different default font sizes.
+    Get this system's default size to use as a base. 
+    All other font sizes will be a multiple of it.
+    '''
     base_font_size = tkfont.Font(font='TkDefaultFont').cget('size')
     return int(multiple * base_font_size)
 
@@ -105,14 +107,17 @@ warnings = ''
 
 #### BEGIN UI FUNCTIONS ####
 
-# Clear the main content frame -- remove text, buttons, etc.
 def cls():
+    '''
+    Clear the main content frame -- remove text, buttons, etc.
+    '''
     for child in main_frame.winfo_children():
         child.place_forget()
 
-# Update the user on the progress of a large conversion task.
 def update_subhead(subhead:Label, current:int, target:int):
-
+    '''
+    Update the user on the progress of a large conversion task.
+    '''
     rounded_pct = round(current/target*100, 1)
 
     subhead = Label(main_frame, 
@@ -123,12 +128,14 @@ def update_subhead(subhead:Label, current:int, target:int):
 
     return subhead
 
-# Displays a dialog box with one or more buttons to the user. Holds until the
-# user clicks a button. Returns the name of the button clicked.
-# icon is one of: info, question, warning, error, done, bomb
 def button_dialog(title:str, message:abc.Sequence,
                   buttons:Tuple[str]=('Cancel', 'Okay'), *, 
                   icon:Optional[str]=None):
+    '''
+    Displays a dialog box with one or more buttons to the user. Holds until the
+    user clicks a button. Returns the name of the button clicked.
+    icon is one of: info, question, warning, error, done, bomb
+    '''
     cls()
 
     button_clicked = None
@@ -202,30 +209,36 @@ def button_dialog(title:str, message:abc.Sequence,
     # Once we get here, a button has been clicked, so return the button's name
     return button_clicked
 
-# Simplified version of button_dialog() that only allows 2 buttons and returns
-# a boolean value. If the user clicks the right/Okay button, return True.
-# Otherwise, if the user clicks the left/Cancel button, return False.
 def bool_dialog(title:str, message:abc.Sequence,
                   button1='Cancel', button2='Okay', *, icon:Optional[str]=None):
+    '''
+    Simplified version of button_dialog() that only allows 2 buttons and returns
+    a boolean value. If the user clicks the right/Okay button, return True.
+    Otherwise, if the user clicks the left/Cancel button, return False.
+    '''
     button_name = button_dialog(title, message, [button1, button2], icon=icon)
     if button_name == button2:
         return True
     else:
         return False
     
-# yn_dialog is like bool_dialog but the buttons' return values are reversed.
-# The left/Yes button returns True, and the right/No button returns false.
 def yn_dialog(title:str, message:abc.Sequence,
                   button1='Yes', button2='No', *, icon:Optional[str]=None):
+    '''
+    yn_dialog is like bool_dialog but the buttons' return values are reversed.
+    The left/Yes button returns True, and the right/No button returns false.
+    '''
     button_name = button_dialog(title, message, [button1, button2], icon=icon)
     if button_name == button1:
         return True
     else:
         return False
     
-# Single-button dialog. Returns None.
 def simple_dialog(title:str, message:abc.Sequence, 
                   button='Okay', *, icon:Optional[str]=None):
+    '''
+    Single-button dialog. Returns None.
+    '''
     button_dialog(title, message, [button], icon=icon)
 
 #### END UI CODE ####
@@ -234,9 +247,9 @@ def simple_dialog(title:str, message:abc.Sequence,
 DELUXE  = 0b10000
 LEGACY  = 0b01000
 REMAKE  = 0b00100
-# Classic and Inferno are in here but are currently unused.
-# Basically they would be treated as Legacy with fewer tiles/objects.
-CLASSIC = 0b00010 
+CLASSIC = 0b00010 # listed as "cross-platform" in menu
+# "Inferno" is an available setting but it's currently unused.
+# Basically it would be treated as Classic with fewer tiles/objects.
 INFERNO = 0b00001
 
 AUTODETECT = 0b00000 # Only for convert_from
@@ -253,7 +266,7 @@ AUTODETECT = 0b00000 # Only for convert_from
 #   last common ancestor of Remake and Legacy
 # - r for Remake (by GoNow; no version numbers),
 #   new codebase but mostly backwards-compatible with Classic levels
-# - l for Legacy (by Terminal & Casini Loogi; 3.7.1 - 4.6.3)
+# - l for Legacy (by Terminal & Casini Loogi; 3.7.1 - 5.2.0)
 # - d for Deluxe (by Terminal & Casini Loogi)
 # EXAMPLES:
 # - 0b11011 means it's compatible with everything but Remake
@@ -262,15 +275,19 @@ AUTODETECT = 0b00000 # Only for convert_from
 OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (    
     ('player',                  0b11111,1,  1),
 
+    ('goombrat',                0b11000,16, 16),
     ('goomba',                  0b11111,17, 17),
     ('green koopa troopa',      0b11111,18, 18),
     ('red koopa troopa',        0b11111,19, 19),
+    ('koopa shell',             0b01000,-1, 20),
     ('flying fish',             0b11111,21, 21),
     ('piranha plant',           0b11111,22, 22),
     ('spiny',                   0b11000,23, 23),
     ('buzzy beetle',            0b11000,24, 24),
     ('bowser',                  0b11111,25, 25),
+    ('dry bones',               0b01000,-1, 26),
 
+    ('boo',                     0b01000,-1, 31),
     ('rotodisc',                0b01000,-1, 32),
     ('fire bar',                0b11111,33, 33),
     ('lava bubble',             0b11111,34, 34),
@@ -284,6 +301,7 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('thwomp',                  0b01000,-1, 42),
 
     ('hammer bro',              0b11111,49, 49),
+    ('fire bro',                0b11000,50, 50),
 
     ('mushroom',                0b11111,81, 81),
     ('fire flower',             0b11111,82, 82),
@@ -315,9 +333,7 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('checkmark',               0b11111,254,254),
 
     # Deluxe only:
-    ('goombrat',                0b10000,16, -1),
     ('blooper',                 0b10000,39, -1),
-    ('fire bro',                0b10000,50, -1),
     ('leaf',                    0b10000,87, -1),
     ('hammer suit',             0b10000,88, -1),
 )
@@ -391,7 +407,8 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     ('ice -> object', 0b11000, 13, 16, -1, ('solid ice', 1,)),
     ('item block progressive', 0b11000, 20, 20, -1, ('item block',)),
     ('semisolid ice', 0b01000, -1, 23, -1, ('semisolid', 1,)),
-    ('item block invisible progressive', 0b11000, 27, 26, -1, ('item block invisible',)),
+    ('item block invisible progressive', 0b11000, 27, 26, -1, 
+        ('item block invisible',)),
     ('scroll lock', 0b11000, 30, 30, -1, (0,)),
     ('scroll unlock', 0b11000, 31, 31, -1, (0,)),
     ('checkpoint', 0b01000, -1, 40, -1, (0,)),
@@ -403,19 +420,23 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     ('warp pipe up fast', 0b11000, 92, 92, -1, (1,)),
     ('flagpole level end warp', 0b01000, -1, 161, -1, ('level end warp',)),
 
-    # Added in Deluxe (sorted by Deluxe ID)
-    ('player barrier', 0b10000, 9, -1, -1, (0,)),
+    # ONLY in Deluxe (sorted by Deluxe ID)
     ('conveyor left', 0b10000, 14, -1, -1, ('conveyor', 1,)),
     ('conveyor right', 0b10000, 15, -1, -1, ('conveyor', 1,)),
     ('item block regen', 0b10000, 26, -1, -1, 
         ('item block infinite', 'item block',)),
+    ('warp tile relative', 0b10000, 80, -1, -1, (0,)),
+        # ^ not compatible with td32
     ('warp tile random', 0b10000, 87, -1, -1, (0,)),
     ('message block', 0b10000, 241, -1, -1, (1,)),
     ('sound block', 0b10000, 239, -1, -1, (0,)), 
 
     # Added in Legacy 5.x (sorted by Legacy ID)
+    ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),
     ('half tile solid', 0b01000, -1, 28, -1, (1,)),
-    ('half tile semisolid', 0b01000, -1, 28, -1, ('semisolid', 1,)),
+    ('half tile semisolid', 0b01000, -1, 29, -1, ('semisolid', 1,)),
+    ('player barrier', 0b11000, 9, 36, -1, (0,)),
+    ('enemy barrier', 0b01000, -1, 37, -1, (0,)),
 )
 
 # List of tuple(str, str) with any incompatible tiles that got replaced
@@ -457,36 +478,44 @@ for i_index, i_item in enumerate(TILE_DATABASE):
     if tile_id >= 0:
         remake_tile_lookup[tile_id] = i_index
 
-# Given an obj's standard string name as it appears in the above database,
-# return that obj's database entry.
 def get_obj_by_name(name:str) -> Optional[Tuple[str, int, int, int]]:
+    '''
+    Given an obj's standard string name as it appears in the above database,
+    return that obj's database entry.
+    '''
     for i in OBJ_DATABASE:
         if i[0] == name:
             return i
     # If name doesn't exist in database, return None
     return None
 
-# Given an obj database entry, return the correct obj ID int for the game
-# version set in the global variable convert_to
 def get_obj_id_for_version(obj:Tuple[str, int, int, int]) -> int:
+    '''
+    Given an obj database entry, return the correct obj ID int for the game
+    version set in the global variable convert_to
+    '''
     if convert_to.get() == DELUXE:
         new_id = obj[2]
     else: # legacy/remake/classic/inferno
         new_id = obj[3]
     return new_id
 
-# Given a tile's standard string name as it appears in the above database,
-# return that tile's database entry.
 def get_tile_by_name(name:str) -> Tuple[str, int, int, int, tuple]:
+    '''
+    Given a tile's standard string name as it appears in the above database,
+    return that tile's database entry.
+    '''
     for i in TILE_DATABASE:
         if i[0] == name:
             return i
     # If name doesn't exist in database, return air
     return TILE_DATABASE[0]
 
-# Given a tile database entry, return the correct tile data int for the game
-# version set in the global variable convert_to
 def get_tile_id_for_version(tile:Tuple[str, int, int, int, tuple]) -> int:
+    '''
+    Given a tile database entry, return the correct tile data int for the game
+    version set in the global variable convert_to
+    '''
     if convert_to.get() == DELUXE:
         new_id = tile[2]
     elif convert_to.get() == REMAKE:
@@ -495,11 +524,13 @@ def get_tile_id_for_version(tile:Tuple[str, int, int, int, tuple]) -> int:
         new_id = tile[3]
     return new_id
 
-# Convert a tile from one version to another, including any ID changes and 
-# replacements of incompatible tiles.
-# Takes in an int[5] list, i.e. the Deluxe tile format.
-# Returns the new tile in the target version's format.
 def convert_tile(old_td:list) -> Union[list, int]:
+    '''
+    Convert a tile from one version to another, including any ID changes and 
+    replacements of incompatible tiles.
+    Takes in an int[5] list, i.e. the Deluxe tile format.
+    Returns the new tile in the target version's format.
+    '''
     # Deluxe TD format:
     # 0. sprite index (keep)
     # 1. bump state (keep)
@@ -530,6 +561,11 @@ def convert_tile(old_td:list) -> Union[list, int]:
 
     # Find that tile's new ID
     new_td[3] = get_tile_id_for_version(db_entry)
+
+    # If converting to L/D, use progressive item blocks where appropriate
+    if convert_to.get() & (LEGACY|DELUXE) and db_entry[0] == 'item block' \
+            and old_td[4] in (81, 82): # mushroom, fire flower
+        new_td[3] = 20 # progressive item block ID in both Legacy & Deluxe
 
     # If tile not compatible with target version, follow fallback chain
     if not (db_entry[1] & convert_to.get()):
@@ -580,7 +616,6 @@ def convert_tile(old_td:list) -> Union[list, int]:
                 # always spit out a mushroom
                 if 'progressive' in db_entry[0]:
                     new_td[4] = 81 # mushroom
-                    # This is where I wish Python had enums
 
                 # turn ice -> tile blocks into ice -> object blocks
                 # that turn into 0 object
@@ -609,14 +644,22 @@ def convert_tile(old_td:list) -> Union[list, int]:
         return new_td[0] + new_td[1]*(2**11) + new_td[2]*(2**15) + \
                 new_td[3]*(2**16) + new_td[4]*(2**24)
 
-# Test if an image file exists on the web.
-# Return True if the specified string is a valid URL.
-# Return False if attempting to visit the URL returns an HTTP error.
-# Return None if GoNow forgot to renew his TLS certificate again.
 def web_file_exists(path:str):
+    '''
+    Test if an image file exists on the web.
+    Return True if the specified string is a valid URL.
+    Return False if attempting to visit the URL returns an HTTP error.
+    Return None if GoNow forgot to renew his TLS certificate again.
+    '''
     try:
-        r = urllib.urlopen(path).getcode()
-        return r.status_code == 200
+        # Assign to nothing, just call to check for error
+        urllib.request.urlopen(path).status
+        return True
+    except AttributeError: 
+        # If using Python 3.8.x or earlier, use `code` instead of `status`
+        # Assign to nothing, just call to check for error
+        urllib.request.urlopen(path).code
+        return True
     except urllib.error.HTTPError:
         # If the path leads to a 404, or the server is down
         return False
@@ -625,8 +668,10 @@ def web_file_exists(path:str):
         # "no internet", but that case is handled elsewhere.)
         return None
 
-# Given a tile of unknown format, return the tile normalized to a list of 5 ints
 def extract_tile(tile:abc.Sequence):
+    '''
+    Given a tile of unknown format, return the tile normalized to a list of 5 ints
+    '''
     global warnings
 
     # Start with an empty tile
@@ -669,8 +714,10 @@ def extract_tile(tile:abc.Sequence):
 
     return extracted_tile
 
-# Given a relative path, convert to an absolute URL path
 def absolute_path(version: int, rel_path: str):
+    '''
+    Given a relative path, convert to an absolute URL path
+    '''
     if version == DELUXE:
         return 'https://raw.githubusercontent.com/mroyale/assets-dx/main/' + \
                 rel_path
@@ -680,9 +727,11 @@ def absolute_path(version: int, rel_path: str):
         return 'https://raw.githubusercontent.com/mroyale/assets/legacy/' + \
                 rel_path
 
-# Convert 1 world file from Legacy TO DELUXE, and return string 
-# containing all converter warnings
 def convert(open_path: str, save_path: str):
+    '''
+    Convert 1 world file from Legacy TO DELUXE, and return string 
+    containing all converter warnings
+    '''
     global convert_fail, warnings
     convert_fail = False # Wipe away previous failed conversions
     warnings = ''
@@ -737,12 +786,18 @@ the selected folder: \n%s\n''' % save_path
         return error_msg
 
     try:
+        # Might as well check for layers now so we don't have to do it over and over again
+        if 'layers' in content['world'][0]['zone'][0]:
+            has_layers = True
+        else:
+            has_layers = False
+
         # Auto-detect version of source file if necessary
         # Why is this a while loop when I only want to run it once? 
         # Because Python doesn't have goto
         while convert_from.get() == AUTODETECT:
             # Test for Deluxe format by checking if tiles are lists
-            if 'layers' in content['world'][0]['zone'][0]:
+            if has_layers:
                 dx_check = type(content['world'][0]['zone'][0]['layers'][0]\
                         ['data'][0][0]) == list
             else:
@@ -752,9 +807,14 @@ the selected folder: \n%s\n''' % save_path
                 convert_from.set(DELUXE)
                 break
 
-            # If the World has "vertical" attribute, it's Remake
-            if 'vertical' in content:
+            # Remake-exclusive World attributes
+            if 'vertical' in content or 'autoMove' in content:
                 convert_from.set(REMAKE)
+                break
+
+            # Legacy-exclusive World attributes
+            if 'group' in content or 'longname' in 'content':
+                convert_from.set(LEGACY)
                 break
 
             # Try to detect version based on map availability
@@ -770,7 +830,7 @@ the selected folder: \n%s\n''' % save_path
                         item['src'].startswith('//')):
                     try:
                         # Basic internet connection test
-                        urllib.request.urlopen('http://1.1.1.1')
+                        urllib.request.urlopen('http://google.com')
                         # If this causes an error, there's a 99% chance you're
                         # not connected to the internet
 
@@ -789,53 +849,93 @@ the selected folder: \n%s\n''' % save_path
                             exists_in_remake = web_file_exists(remake_url)
                             if exists_in_remake == True:
                                 convert_from.set(REMAKE)
-                                break # break from for loop
                             elif exists_in_remake == None:
                                 convert_from.set(REMAKE)
                                 warnings += \
 'Security warning on Remake map image, what a surprise.\n'
                             # If it's not in Legacy or Remake, give up
                             else:
-                                convert_from.set(LEGACY)
                                 warnings += \
-'The auto-detector detected %s to be a LEGACY world, but it has low confidence \
-in this detection. If this is in error, please send Clippy the world that’s \
-getting this result.\n' % open_path.split(os.sep)[-1]
-                    except urllib.error.HTTPError:
-                        # If test page 404s, fall through to the "detect
-                        # everything else as Legacy" code
-                        pass
-                    except urllib.error.URLError:
-                        # If no internet, fall through to the "detect
-                        # everything else as Legacy" code
-                        pass
+'Couldn’t find the map sheet %s in Legacy or Remake. Defaulting to Legacy for \
+the world version.\n' % open_path.split(os.sep)[-1]
+#                     except urllib.error.HTTPError:
+#                         # If test page 404s, fall through to the "detect
+#                         # everything else as Legacy" code
+#                         warnings += 'No internet connection! Version \
+# detection will be less accurate.\n'
+#                     except urllib.error.URLError:
+#                         # If no internet, fall through to the "detect
+#                         # everything else as Legacy" code
+#                         warnings += 'No internet connection! Version \
+# detection will be less accurate.\n'
                     finally:
-                        break # break from for loop
+                        pass
+                    # Since we've found the map sheet, we don't need to
+                    # keep looping anymore
+                    break 
+
+            # Remake-exclusive feature check #1:
+            # Fire bars have 4 params in Remake, and 3 in Legacy
+            for level_i, level in enumerate(content['world']): # Loop thru lvls
+                for zone_i, zone in enumerate(level['zone']): # Loop thru zones
+                    for obj_i, obj in enumerate(zone['obj']): # Loop thru objs
+                        if obj['type'] == 33: # fire bar
+                            if len(obj['param']) == 4:
+                                convert_from.set(REMAKE)
+
+            # Remake-exclusive feature check #2: conveyors
+            for level_i, level in enumerate(content['world']): # Loop thru lvls
+                for zone_i, zone in enumerate(level['zone']): # Loop thru zones
+                    if has_layers:
+                        for layer_i, layer in enumerate(zone['layers']): 
+                                                        # Loop thru layers
+                            for row_i, row in enumerate(layer['data']): 
+                                                            # Loop thru rows
+                                for tile_i, tile in enumerate(row): 
+                                                            # Loop tiles by col
+                                    test_tile = extract_tile(tile)
+                                    # Check for conveyor tile (see below)
+                                    if test_tile[3] == 12 \
+                                            and test_tile[4] >= 112 \
+                                            and test_tile[4] < 144: 
+                                        convert_from.set(REMAKE)
+                    else:
+                        for row_i, row in enumerate(zone['data']): 
+                                                        # Loop thru rows
+                            for tile_i, tile in enumerate(row): 
+                                                        # Loop tiles by col
+                                test_tile = extract_tile(tile)
+                                # Check for conveyor tile (ID 12 in Remake).
+                                # In Legacy, ID 12 = Item Note Block, so we also
+                                # make sure the Extra Data has a reasonable speed
+                                # value that ISN'T a valid object ID.
+                                if test_tile[3] == 12 and test_tile[4] >= 112 \
+                                        and test_tile[4] < 144: 
+                                    convert_from.set(REMAKE)
 
             # Treat everything else as Legacy because it has more tile options
             # and it's harder to detect from file contents
-            # This could make conveyors get misconverted but AFAIK Royale City
-            # (which uses vertical) is the only world that has them
+            # This could make conveyors get misconverted, but they only show
+            # up in 2 known worlds (Royale City and Stiz 1)
             if convert_from.get() == AUTODETECT:
+                warnings += 'Failed to definitively detect world version; \
+defaulting to Legacy. Please check to make sure this is correct.\n'
                 convert_from.set(LEGACY)
+            else:
+                warnings += \
+                    f'World version detected as {game_ver_str(convert_from)}\n'
             break
-        
-        # Can't convert from one version to the same version
-        if convert_from.get() == convert_to.get():
-            convert_fail = True
-            error_msg = 'You can’t convert from %s to %s!' % \
-                    (game_ver_str(convert_from), game_ver_str(convert_to))
-            return error_msg
 
-        # Vertical (really free-roam) scrolling is now set zone-by-zone
+        # Vertical (really free-roam) scrolling is set zone-by-zone in L/D
         vertical_world = False
         if convert_from.get() == REMAKE and 'vertical' in content:
             if content['vertical'] == 'true':
                 vertical_world = True
             del content['vertical']
-        # If ANY zone in a Deluxe world is set to Vertical or Free-Roam camera,
-        # make the whole world vertical
-        if convert_from.get() == DELUXE and convert_to.get() == REMAKE:
+        # If ANY zone in a Deluxe or Legacy world is set to
+        # Vertical or Free-Roam camera, make the whole world vertical in Remake
+        if convert_from.get() & (DELUXE|LEGACY) \
+                and convert_to.get() == REMAKE:
             # Yup, we gotta loop thru EVERY world, level, and zone
             for level_i, level in enumerate(content['world']):
                 for zone_i, zone in enumerate(level['zone']):
@@ -862,19 +962,32 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                 content["audioOverrideURL"] = \
 "https://raw.githubusercontent.com/mroyale/assets/legacy/audio/"
 
+        if convert_to.get() & (DELUXE|INFERNO):
             # Delete world data that isn't in Deluxe
             if 'shortname' in content:
                 del content['shortname']
+            if 'longname' in content:
+                del content['longname']
+            if 'autoMove' in content:
+                del content['autoMove']
             if 'musicOverridePath' in content:
                 del content['musicOverridePath']
             if 'soundOverridePath' in content:
                 del content['soundOverridePath']
+            # NOTE: This is only necessary because the Java (Inferno/Deluxe) 
+            # server rejects any world with a parameter it doesn't recognize, 
+            # while the Python (Classic/Legacy) server simply ignores unknown
+            # parameters. (The Remake server also ignores them.)
 
-        if convert_to.get() & (CLASSIC|REMAKE|LEGACY):
+        if convert_to.get() & (LEGACY|REMAKE|CLASSIC):
             # Add shortname to make world pass validation in
             # Classic and Legacy. For Remake, it's just useful as a watermark.
             if 'shortname' not in content:
-                content['shortname'] = 'DXIFY'
+                content['shortname'] = 'WC'
+            # longname isn't *necessary* anywhere, but again, watermark
+            if 'longname' not in content:
+                content['longname'] = \
+                    f"Converted with Clippy's World Converter (v{VERSION})"
             if 'mode' not in content:
                 content['mode'] = 'royale'
             # Legacy music overrides only work with relative paths, 
@@ -903,8 +1016,9 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                 content['assets'] = absolute_path(DELUXE, 
                                                   "assets/"+content['assets'])
             else:
+                # Deluxe worlds aren't gonna use the Legacy animations
                 content['assets'] = \
-                        "https://marioroyale.com/royale/assets/assets.json"
+                    "https://marioroyale.com/royale/assets/assets-noanim.json"
         # DX->R assets will just be wrong and there's nothing I can do about it
 
         # Convert map & obj sheets
@@ -962,9 +1076,16 @@ getting this result.\n' % open_path.split(os.sep)[-1]
 
         for level_i, level in enumerate(content['world']): # Loop thru levels
             for zone_i, zone in enumerate(level['zone']): # Loop thru zones
+                # Calculate zone height (for flagpole placement and
+                # per-zone vertical setting)
+                if has_layers:
+                    zone_height = len(zone['layers'][0]['data'])
+                else:
+                    zone_height = len(zone['data'])
 
                 if convert_to.get() == DELUXE:
-                    # Delete world data that isn't in Deluxe
+                    # Delete world data that isn't in Deluxe because it
+                    # doesn't like extra parameters
                     if 'winmusic' in content['world'][level_i]['zone'][zone_i]:
                         del content['world'][level_i]['zone'][zone_i]\
                                 ['winmusic']
@@ -977,8 +1098,14 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                         del content['world'][level_i]['zone'][zone_i]\
                                 ['levelendoff']
                     
-                    # If world was vertical, add free-roam camera to each zone
-                    if vertical_world:
+                    # If world was vertical in Remake, add free-roam camera
+                    # to each zone in Deluxe if zone is above height limit 14
+                    if vertical_world and zone_height > 14:
+                        content['world'][level_i]['zone'][zone_i]['camera'] = 2
+                elif convert_to.get() == LEGACY:
+                    # If world was vertical in Remake, add free-roam camera
+                    # to each zone in Legacy if zone is above height limit 16
+                    if vertical_world and zone_height > 16:
                         content['world'][level_i]['zone'][zone_i]['camera'] = 2
 
                 # Adjust position of left warp exits
@@ -1013,7 +1140,7 @@ getting this result.\n' % open_path.split(os.sep)[-1]
 
                 flagpole_pos = None
                 # Two different conversion options based on if level has layers
-                if 'layers' in zone:
+                if has_layers:
                     # Loop thru the layers
                     for layer_i, layer in enumerate(zone['layers']):
                         # Loop thru the rows
@@ -1151,6 +1278,85 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                         # Reduce the loop variable to account for the removal
                         obj_i -= 1
 
+                    # Remake<->Legacy fire bar conversion
+                    # Deluxe only has 2 params (phase & length), like Classic
+                    if obj_entry[0] == 'fire bar':
+                        if convert_from.get() == REMAKE \
+                                and convert_to.get() == LEGACY:
+                            # Remake firebar params:
+                            # [phase, length, clockwise, speed_mult]
+                            old_param = zone['obj'][obj_i]['param']
+
+                            if len(old_param) == 2: # clockwise
+                                old_param.append(0)
+                                # fallthrough
+                            if len(old_param) == 3: # speed_mult
+                                old_param.append(1)
+                            # len(old_param) is now at least 4
+
+                            # The game doesn't care if params are int or str,
+                            # but Python does
+                            try:
+                                old_param[0] = int(old_param[0])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[0] = 0 # phase
+                            try:
+                                old_param[1] = int(old_param[1])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[1] = 6 # length
+                            try:
+                                old_param[2] = int(old_param[2])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[2] = 0 # clockwise
+                            try:
+                                old_param[3] = float(old_param[3])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[3] = 1.0 # speed_mult
+
+                            cw = -1 if zone['obj'][obj_i]['param'][2] else 1
+                            zone['obj'][obj_i]['param'] = [
+                                old_param[0], old_param[1],
+                                23//old_param[3]*cw
+                            ]
+                        elif convert_from.get() == LEGACY \
+                                and convert_to.get() == REMAKE:
+                            # Legacy firebar params:
+                            # [phase, length, rate]
+                            # Default rate is 23. Lower is faster.
+                            old_param = zone['obj'][obj_i]['param']
+                            if len(old_param) == 2: # rate
+                                old_param.append(23)
+                            # len(old_param) is now at least 4
+
+                            # The game doesn't care if params are int or str,
+                            # but Python does
+                            try:
+                                old_param[0] = int(old_param[0])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[0] = 0 # phase
+                            try:
+                                old_param[1] = int(old_param[1])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[1] = 6 # length
+                            try:
+                                old_param[2] = int(old_param[2])
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[2] = 23 # rate
+
+                            zone['obj'][obj_i]['param'] = [
+                                old_param[0], old_param[1],
+                                0, 23/old_param[2] # decimals allowed here
+                            ]
+                            # Don't bother setting "clockwise" param
+                            # because negating speed_mult does the same thing
+
                     # FLAG CHECK
                     if obj_entry[0] == 'flag':
                         has_flag = True
@@ -1161,11 +1367,6 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                 # Now that we've left the loop, if we still don't have a flag,
                 # add one at the position we found earlier
                 if flagpole_pos is not None and not has_flag:
-                    # Calculate zone height
-                    if 'layers' in zone:
-                        zone_height = len(zone['layers'][0]['data'])
-                    else:
-                        zone_height = len(zone['data'])
                     # Create object
                     new_flag_obj : Dict[str, any] = {
                         'type': 177,
@@ -1176,12 +1377,14 @@ getting this result.\n' % open_path.split(os.sep)[-1]
                     # Add object to JSON
                     zone['obj'].append(new_flag_obj)
 
-    except KeyError:
-        # File is missing required fields
-        convert_fail = True
-        error_msg = '''The selected file appears to be corrupted.
-Are you sure it’s a world?\n%s\n''' % open_path
-        return error_msg
+#     except KeyError:
+#         # File is missing required fields
+#         convert_fail = True
+#         error_msg = '''The selected file appears to be corrupted.
+# Are you sure it’s a world?\n%s\n''' % open_path
+#         return error_msg
+    finally:
+        pass
 
     # Open the file for real and wipe it
     write_file = open(save_path, 'w', encoding='utf-8')
@@ -1224,10 +1427,12 @@ replaced with “%s”\n' % (i[0], i[1])
 
     return warnings
 
-# Given an IntVar (from convert_from or convert_to), 
-# return the string associated with that game version number
-# (e.g. 'INFERNO' for v=1)
 def game_ver_str(v:IntVar):
+    '''
+    Given an IntVar (from convert_from or convert_to), 
+    return the string associated with that game version number
+    (e.g. 'INFERNO' for v=1)
+    '''
     i = v.get()
     if i == 0b10000:
         return 'DELUXE'
@@ -1244,8 +1449,11 @@ def game_ver_str(v:IntVar):
     # else
     return 'UNKNOWN'
 
-# Ask user for a single file then pass its path to the main convert() function
 def convert_file():
+    '''
+    Ask user for a single file, then pass its path to the main 
+    convert() function
+    '''
     open_path = filedialog.askopenfilename(
         title='Select a world file to convert', 
         # filetypes=[('MR World JSON', '*.json *.txt *.game')],
@@ -1285,6 +1493,9 @@ def convert_file():
     menu()
 
 def convert_folder():
+    '''
+    Ask user to select a folder, then convert every file in that folder
+    '''
     open_dir = filedialog.askdirectory(
         title='Select a folder. All worlds in the folder will be converted.',
         initialdir='./')
@@ -1479,7 +1690,6 @@ assets.json animations will play at 2× speed in Deluxe since Deluxe is \
         ], icon='warning')
     menu()
 
-# Download and display the online Message of the Day
 '''
 For each line, everything before the first space is the full list versions 
 that should show the message. The rest of the line is the message itself.
@@ -1498,6 +1708,9 @@ This version of the program would display "We will only be adding the W."
 because it doesn't match any of the versions specified for the warnings.
 '''
 def motd():
+    '''
+    Download and display the online Message of the Day
+    '''
     motd_url = 'https://raw.githubusercontent.com/ClippyRoyale/\
 WorldConverter/main/motd.txt'
     try:
@@ -1560,7 +1773,7 @@ def exit_app():
 try:
     # Comment out during development if you want crashes to be logged to the
     # console instead of displaying a bomb dialog
-    window.report_callback_exception = crash
+    # window.report_callback_exception = crash
     
     # Determine if we're running on replit
     if os.path.isdir("/home/runner") == True:
