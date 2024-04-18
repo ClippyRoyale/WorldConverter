@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.4.0
+Version 3.4.1
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.0'
+VERSION = '3.4.1'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -350,6 +350,10 @@ convert_from.set(AUTODETECT)
 convert_to = IntVar()
 convert_to.set(DELUXE)
 
+# Whether to convert standard item boxes (that contain a mushroom or flower)
+# to progressive item boxes
+use_prog = IntVar()
+
 # TILE DATABASE
 # Format: (tile_name, version_support, deluxe_id, legacy_id, remake_id, 
 #           (fallback1, fallback2, ...))
@@ -564,7 +568,7 @@ def convert_tile(old_td:list) -> Union[list, int]:
 
     # If converting to L/D, use progressive item blocks where appropriate
     if convert_to.get() & (LEGACY|DELUXE) and db_entry[0] == 'item block' \
-            and old_td[4] in (81, 82): # mushroom, fire flower
+            and use_prog.get() and old_td[4] in (81, 82): # mushroom, flower
         new_td[3] = 20 # progressive item block ID in both Legacy & Deluxe
 
     # If tile not compatible with target version, follow fallback chain
@@ -813,7 +817,7 @@ the selected folder: \n%s\n''' % save_path
                 break
 
             # Legacy-exclusive World attributes
-            if 'group' in content or 'longname' in 'content':
+            if 'group' in content or 'longname' in content:
                 convert_from.set(LEGACY)
                 break
 
@@ -1357,6 +1361,29 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                             # Don't bother setting "clockwise" param
                             # because negating speed_mult does the same thing
 
+                    # Deluxe<->Legacy cheep cheep conversion
+                    # In Deluxe, the variant param is 0=green, 1=red
+                    # In Legacy, the variant param is 0=red, 1=gray
+                    if obj_entry[0] == 'cheep cheep' \
+                            and convert_from.get() & (DELUXE|LEGACY) \
+                            and convert_to.get() & (DELUXE|LEGACY) \
+                            and convert_from.get() != convert_to.get():
+                        # In both Legacy and Deluxe, the first param is the
+                        # color variant, but in Legacy, 0=red and 1=gray,
+                        # while in Deluxe, 0=green and 1=red.
+                        # So we need to flip these
+                        old_param = zone['obj'][obj_i]['param']
+                        if len(old_param) >= 1:
+                            try:
+                                # Parse int
+                                old_param[0] = int(old_param[0])
+                                # Flip 0 to 1, and 1 to 0
+                                old_param[0] = int(not bool(old_param[0]))
+                            except (ValueError, TypeError):
+                                # Default value if a param is invalid or blank
+                                old_param[0] = 0 # variant
+
+
                     # FLAG CHECK
                     if obj_entry[0] == 'flag':
                         has_flag = True
@@ -1393,7 +1420,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
     # Close the file to prevent bugs that occur in large levels
     write_file.close()
 
-    warnings += 'YOUR CONVERTED WORLD HAS BEEN SAVED TO:\n'+save_path+'\n\n'
+    warnings += '\nYOUR CONVERTED WORLD HAS BEEN SAVED TO:\n'+save_path+'\n\n'
 
     # Report the IDs of incompatible objects that were removed
     if removed_objects:
@@ -1667,6 +1694,13 @@ def menu():
     for index, item in enumerate(col2_options):
         item.place(x=240, y=100+(20*index))
 
+    # Checkbox options
+    prog_option = Checkbutton(main_frame, 
+            text='Use progressive item boxes (Legacy/Deluxe only)', 
+            bg=colors['BG'], variable=use_prog)
+    prog_option.select()
+    prog_option.place(x=80, y=200)
+
     window.update_idletasks()
 
     window.mainloop()
@@ -1773,7 +1807,7 @@ def exit_app():
 try:
     # Comment out during development if you want crashes to be logged to the
     # console instead of displaying a bomb dialog
-    # window.report_callback_exception = crash
+    window.report_callback_exception = crash
     
     # Determine if we're running on replit
     if os.path.isdir("/home/runner") == True:
