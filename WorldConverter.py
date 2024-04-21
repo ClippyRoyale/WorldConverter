@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.4.1
+Version 3.4.2
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.1'
+VERSION = '3.4.2'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -436,10 +436,10 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     ('sound block', 0b10000, 239, -1, -1, (0,)), 
 
     # Added in Legacy 5.x (sorted by Legacy ID)
-    ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),
-    ('half tile solid', 0b01000, -1, 28, -1, (1,)),
-    ('half tile semisolid', 0b01000, -1, 29, -1, ('semisolid', 1,)),
-    ('player barrier', 0b11000, 9, 36, -1, (0,)),
+    ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),   # WIP
+    ('half tile solid', 0b01000, -1, 28, -1, (1,)),                     # WIP
+    ('half tile semisolid', 0b01000, -1, 29, -1, ('semisolid', 1,)),    # WIP
+    ('player barrier', 0b11000, 9, 36, -1, (1,)),
     ('enemy barrier', 0b01000, -1, 37, -1, (0,)),
 )
 
@@ -567,9 +567,12 @@ def convert_tile(old_td:list) -> Union[list, int]:
     new_td[3] = get_tile_id_for_version(db_entry)
 
     # If converting to L/D, use progressive item blocks where appropriate
-    if convert_to.get() & (LEGACY|DELUXE) and db_entry[0] == 'item block' \
-            and use_prog.get() and old_td[4] in (81, 82): # mushroom, flower
-        new_td[3] = 20 # progressive item block ID in both Legacy & Deluxe
+    if convert_to.get() & (LEGACY|DELUXE) and use_prog.get() \
+            and old_td[4] in (81, 82): # mushroom, flower
+        if db_entry[0] == 'item block':
+            new_td[3] = 20 # progressive item block ID in both Legacy & Deluxe
+        if db_entry[0] == 'item block invisible':
+            new_td[3] = 27 if convert_to.get()==DELUXE else 26
 
     # If tile not compatible with target version, follow fallback chain
     if not (db_entry[1] & convert_to.get()):
