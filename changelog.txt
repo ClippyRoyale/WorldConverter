@@ -248,3 +248,10 @@ Version 3.4.1 (Apr. 18, 2024):
 
 Version 3.4.2 (Apr. 21, 2024):
   + Progressive item block conversion now converts invisible item blocks too
+
+Version 3.4.3 (Apr. 27, 2024):
+  * Fix tile extraction for Deluxe tiles with length < 5
+      * e.g. if an air tile is stored as [30], it no longer "fails to convert"
+  * Fix background image URLs
+      * Legacy seems to only display background images with depth 0, but that
+        seems to be a bug with the game, not the converter

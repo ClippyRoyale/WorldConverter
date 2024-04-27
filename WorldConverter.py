@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.4.2
+Version 3.4.3
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.2'
+VERSION = '3.4.3'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -687,25 +687,27 @@ def extract_tile(tile:abc.Sequence):
     try:
         if type(tile) == list:
             # Deluxe: list-based format
+            # ValueError = not an int (e.g. extra data in relative warp tiles)
+            # IndexError = out of range (e.g. if tile data is just [30])
             try:
                 extracted_tile[0] = int(tile[0])
-            except ValueError:
+            except (ValueError, IndexError):
                 extracted_tile[0] = 30 # empty sprite
             try:
                 extracted_tile[1] = int(tile[1])
-            except ValueError:
+            except (ValueError, IndexError):
                 extracted_tile[1] = 0
             try:
                 extracted_tile[2] = int(tile[2])
-            except ValueError:
+            except (ValueError, IndexError):
                 extracted_tile[2] = 0
             try:
                 extracted_tile[3] = int(tile[3])
-            except ValueError:
+            except (ValueError, IndexError):
                 extracted_tile[3] = 0
             try:
                 extracted_tile[4] = int(tile[4])
-            except ValueError:
+            except (ValueError, IndexError):
                 extracted_tile[4] = 0
         elif type(tile) == int:
             # Legacy and earlier: td32
@@ -741,7 +743,7 @@ def convert(open_path: str, save_path: str):
     '''
     global convert_fail, warnings
     convert_fail = False # Wipe away previous failed conversions
-    warnings = ''
+    warnings = '' # Reset warnings
 
     if open_path == save_path:
         convert_fail = True
@@ -990,7 +992,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             # Add shortname to make world pass validation in
             # Classic and Legacy. For Remake, it's just useful as a watermark.
             if 'shortname' not in content:
-                content['shortname'] = 'WC'
+                content['shortname'] = '[WC]'
             # longname isn't *necessary* anywhere, but again, watermark
             if 'longname' not in content:
                 content['longname'] = \
@@ -1114,6 +1116,12 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     # to each zone in Legacy if zone is above height limit 16
                     if vertical_world and zone_height > 16:
                         content['world'][level_i]['zone'][zone_i]['camera'] = 2
+
+                # Fix background image URLs in Deluxe worlds
+                if convert_from.get() == DELUXE and 'background' in zone:
+                    for i in zone['background']:
+                        dx_url = absolute_path(DELUXE, i['url'])
+                        i['url'] = dx_url
 
                 # Adjust position of left warp exits
                 # Remake and Legacy have a bug where you need to place a warp
