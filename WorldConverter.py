@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.4.3
+Version 3.4.4
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.3'
+VERSION = '3.4.4'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -299,6 +299,7 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('rex',                     0b10000,40, 40),
     ('cheep cheep',             0b11000,38, 41),
     ('thwomp',                  0b01000,-1, 42),
+    ('tweeter',                 0b01000,-1, 43),
 
     ('hammer bro',              0b11111,49, 49),
     ('fire bro',                0b11000,50, 50),
@@ -316,6 +317,9 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('gold flower',             0b01000,-1, 100), 
         # in Remake editor but unused in game
 
+    ('door',                    0b01000,-1, 129),
+    ('key',                     0b01000,-1, 130), 
+
     ('platform',                0b11111,145,145),
     ('bus platform',            0b11111,146,146),
     ('path platform',           0b01000,-1, 147),
@@ -329,6 +333,8 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('flag',                    0b11111,177,177),
     ('goalpost',                0b11000,178,178), # from SMW
 
+    ('cheep cheep spawner',     0b01000,-1, 193), 
+
     ('text',                    0b11111,253,253),
     ('checkmark',               0b11111,254,254),
 
@@ -338,7 +344,7 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('hammer suit',             0b10000,88, -1),
 )
 UNKNOWN_OBJ = ('UNKNOWN', 0b00000, -1, -1)
-    # generic entry for unknown object, if an invalid ID is removed
+    # generic entry for unknown object, e.g. if an invalid ID is removed
 removed_objects = [] # Object IDs removed from the world will go here
 
 # Misc. global variables
@@ -413,8 +419,8 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     ('semisolid ice', 0b01000, -1, 23, -1, ('semisolid', 1,)),
     ('item block invisible progressive', 0b11000, 27, 26, -1, 
         ('item block invisible',)),
-    ('scroll lock', 0b11000, 30, 30, -1, (0,)),
-    ('scroll unlock', 0b11000, 31, 31, -1, (0,)),
+    ('scroll lock x', 0b11000, 30, 30, -1, (0,)),
+    ('scroll unlock x', 0b11000, 31, 31, -1, (0,)),
     ('checkpoint', 0b01000, -1, 40, -1, (0,)),
     ('warp pipe single slow', 0b11000, 93, 87, -1, (1,)),
     ('warp pipe single fast', 0b11000, 94, 88, -1, (1,)),
@@ -435,10 +441,14 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     ('message block', 0b10000, 241, -1, -1, (1,)),
     ('sound block', 0b10000, 239, -1, -1, (0,)), 
 
-    # Added in Legacy 5.x (sorted by Legacy ID)
-    ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),   # WIP
-    ('half tile solid', 0b01000, -1, 28, -1, (1,)),                     # WIP
-    ('half tile semisolid', 0b01000, -1, 29, -1, ('semisolid', 1,)),    # WIP
+    # Added in Legacy 5.x and later (sorted by Legacy ID)
+    ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),
+    ('half tile solid', 0b01000, -1, 28, -1, (1,)),
+    ('half tile semisolid', 0b01000, -1, 29, -1, ('semisolid', 1,)),
+    ('scroll lock y', 0b01000, -1, 32, -1, (0,)),
+    ('scroll unlock y', 0b01000, -1, 33, -1, (0,)),
+    ('scroll lock x/y', 0b01000, -1, 34, -1, (0,)),
+    ('scroll unlock x/y', 0b01000, -1, 35, -1, (0,)),
     ('player barrier', 0b11000, 9, 36, -1, (1,)),
     ('enemy barrier', 0b01000, -1, 37, -1, (0,)),
 )
@@ -1769,7 +1779,7 @@ WorldConverter/main/motd.txt'
             if (len(motd_lines[i]) == 2) and \
                     ((VERSION in motd_lines[i][0]) or \
                         (motd_lines[i][0] == '*')):
-                motd_text = motd_lines[i][1]
+                motd_text = motd_lines[i][1].replace('^','\n')
                 motd_header = 'News!'
                 motd_buttons = ['Exit', 'Continue']
                 # Add update button if MOTD is flagged as an update notice

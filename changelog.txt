@@ -255,3 +255,7 @@ Version 3.4.3 (Apr. 27, 2024):
   * Fix background image URLs
       * Legacy seems to only display background images with depth 0, but that
         seems to be a bug with the game, not the converter
+
+Version 3.4.4 (Jun. 8, 2024)
+  * Update object/tile databases to recognize new MR 6.0 features
+  * MOTD now supports newlines
