@@ -1,6 +1,6 @@
 '''
 MR World Converter
-Version 3.4.4
+Version 3.4.5
 
 Copyright © 2022–2024 ClippyRoyale
 
@@ -35,7 +35,7 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.4'
+VERSION = '3.4.5'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
@@ -745,6 +745,11 @@ def absolute_path(version: int, rel_path: str):
     else: # LEGACY
         return 'https://raw.githubusercontent.com/mroyale/assets/legacy/' + \
                 rel_path
+    
+def is_abs_path(url: str):
+    return (url.startswith('http://') or \
+            url.startswith('https://') or \
+            url.startswith('//'))
 
 def convert(open_path: str, save_path: str):
     '''
@@ -843,10 +848,7 @@ the selected folder: \n%s\n''' % save_path
                 # based on the version selected/detected earlier.
                 # First of all, only do this if it *is* a relative path, because
                 # if it's already a full URL, then we shouldn't have any issues
-                if item['id'] == 'map' and not \
-                        (item['src'].startswith('http://') or \
-                        item['src'].startswith('https://') or \
-                        item['src'].startswith('//')):
+                if item['id'] == 'map' and not is_abs_path(item['src']):
                     try:
                         # Basic internet connection test
                         urllib.request.urlopen('http://google.com')
@@ -877,16 +879,16 @@ the selected folder: \n%s\n''' % save_path
                                 warnings += \
 'Couldn’t find the map sheet %s in Legacy or Remake. Defaulting to Legacy for \
 the world version.\n' % open_path.split(os.sep)[-1]
-#                     except urllib.error.HTTPError:
-#                         # If test page 404s, fall through to the "detect
-#                         # everything else as Legacy" code
-#                         warnings += 'No internet connection! Version \
-# detection will be less accurate.\n'
-#                     except urllib.error.URLError:
-#                         # If no internet, fall through to the "detect
-#                         # everything else as Legacy" code
-#                         warnings += 'No internet connection! Version \
-# detection will be less accurate.\n'
+                    except urllib.error.HTTPError:
+                        # If test page 404s, fall through to the "detect
+                        # everything else as Legacy" code
+                        warnings += 'No internet connection! Version \
+detection will be less accurate.\n'
+                    except urllib.error.URLError:
+                        # If no internet, fall through to the "detect
+                        # everything else as Legacy" code
+                        warnings += 'No internet connection! Version \
+detection will be less accurate.\n'
                     finally:
                         pass
                     # Since we've found the map sheet, we don't need to
@@ -975,11 +977,15 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             
             # Add audio override so Legacy worlds play their original music/SFX
             # if convert_from.get() == REMAKE:
-            #     content["audioOverrideURL"] = \
-            #         "https://mroyale.net/audio/"
+            #     content["audioOverrideURL"] = absolute_path(REMAKE,'audio/')
             if convert_from.get() & (LEGACY|CLASSIC|INFERNO):
-                content["audioOverrideURL"] = \
-"https://raw.githubusercontent.com/mroyale/assets/legacy/audio/"
+                content["audioOverrideURL"] = absolute_path(LEGACY, 'audio/')
+                
+        if convert_from.get() == REMAKE:
+            # Remove effects sheet that's only in Deluxe
+            for index, dict_ in enumerate(content['resource']):
+                if dict_['id'] == 'effects':
+                    del content['resource'][index]
 
         if convert_to.get() & (DELUXE|INFERNO):
             # Delete world data that isn't in Deluxe
@@ -1021,23 +1027,25 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
         # Add full URL for Legacy assets when converting to Deluxe
         if convert_to.get() == DELUXE:
             if convert_from.get() == LEGACY and 'assets' in content:
-                content['assets'] = absolute_path(LEGACY, 
+                if not is_abs_path(content['assets']):
+                    content['assets'] = absolute_path(LEGACY,
                                                   "assets/"+content['assets'])
             # If the world doesn't specify assets (i.e. Classic & Remake), 
             # use Legacy assets because they're a superset of Classic/Remake's 
             # hardcoded animations
             else:
-                content['assets'] = \
-"https://raw.githubusercontent.com/mroyale/assets/legacy/assets/assets.json"
+                content['assets'] = absolute_path(LEGACY,
+                        'assets/assets.json')
         # Similar situation but for Deluxe->Legacy assets
         elif convert_from.get() == DELUXE and convert_to.get() == LEGACY:
-            if 'assets' in content:
-                content['assets'] = absolute_path(DELUXE, 
+            if 'assets' in content: 
+                if not is_abs_path(content['assets']):
+                    content['assets'] = absolute_path(DELUXE,
                                                   "assets/"+content['assets'])
             else:
-                # Deluxe worlds aren't gonna use the Legacy animations
-                content['assets'] = \
-                    "https://marioroyale.com/royale/assets/assets-noanim.json"
+                # Deluxe worlds won't use the Legacy animations
+                content['assets'] = absolute_path(DELUXE,
+                        'assets/assets-noanim.json')
         # DX->R assets will just be wrong and there's nothing I can do about it
 
         # Convert map & obj sheets
@@ -1046,10 +1054,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             # based on the version selected/detected earlier.
             # First of all, only do this if it *is* a relative path, because
             # if it's already a full URL, then we shouldn't have any issues
-            if item['id'] == 'map' and not \
-                    (item['src'].startswith('http://') or \
-                    item['src'].startswith('https://') or \
-                    item['src'].startswith('//')):
+            if item['id'] == 'map' and not is_abs_path(item['src']):
                 if convert_from.get() == DELUXE:
                     dx_url = absolute_path(DELUXE, item['src'])
                     content['resource'][index]['src'] = dx_url
@@ -1066,19 +1071,17 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             if item['id'] == 'obj':
                 # Converting from Any to Deluxe: Switch to Deluxe default obj
                 if convert_to.get() == DELUXE:
-                    content['resource'][index]['src'] = \
-'https://marioroyale.com/royale/img/game/smb_obj.png'
+                    content['resource'][index]['src'] = absolute_path(DELUXE,
+                            'img/game/smb_obj.png')
                 # Converting from Deluxe to Any: Switch to Legacy default obj
                 # Don't need a special case for Deluxe->Remake because Legacy
                 # obj is a superset of Remake's
                 elif convert_from.get() == DELUXE:
-                    content['resource'][index]['src'] = \
-'https://raw.githubusercontent.com/mroyale/assets/master/img/game/smb_obj.png'
+                    content['resource'][index]['src'] = absolute_path(LEGACY,
+                            'img/game/smb_obj.png')
                 # If the conversion doesn't involve Deluxe but it uses a
                 # relative path
-                elif not (item['src'].startswith('http://') or \
-                    item['src'].startswith('https://') or \
-                    item['src'].startswith('//')):
+                elif not is_abs_path(item['src']):
                     # Converting from Remake to Legacy: Expand obj sheet URL
                     # to absolute path on Remake domain
                     if convert_from.get() == REMAKE:
@@ -1617,7 +1620,7 @@ def convert_folder():
 
     # Tell the user the conversion is done
     simple_dialog(done_heading, 
-['All converted worlds have been saved to the folder with the path  “%s”.' % \
+['All converted worlds have been saved to the folder with the path “%s”.' % \
  save_dir, 'If there were any converter warnings, they have been logged to \
 _WARNINGS.LOG.'], 'Continue', icon='done')
     menu()
@@ -1852,6 +1855,6 @@ into the list of files in the left sidebar.''')
     else:
         setup()
 
-except Exception as e:
+except Exception as _:
     ei = sys.exc_info()
     crash(ei[0], ei[1])

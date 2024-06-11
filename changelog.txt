@@ -211,7 +211,7 @@ Version 3.2.2 (Nov. 26, 2023):
 
 Version 3.3.0 (Mar. 11, 2024):
   + Reworked object database to address conflicts between Legacy & Deluxe IDs
-  + Added objects from latest Legacy updates to database
+  + Added objects from MR Legacy updates to database (up to 5.1)
       * Including: rotodisc, rex, cheep cheep, thwomp, path platform
   + Add flag objects to Remake levels that have flagpoles but no flags
       * Remake STILL doesn't even show flag sprites, but Legacy requires the
@@ -256,6 +256,12 @@ Version 3.4.3 (Apr. 27, 2024):
       * Legacy seems to only display background images with depth 0, but that
         seems to be a bug with the game, not the converter
 
-Version 3.4.4 (Jun. 8, 2024)
+Version 3.4.4 (Jun. 8, 2024):
   * Update object/tile databases to recognize new MR 6.0 features
   * MOTD now supports newlines
+
+Version 3.4.5 (Jun. 11, 2024):
+  * Remove "effects" resource when converting Deluxe->Legacy
+  * Fixed bug that always turned assets URLs into absolute paths even when
+    they were already absolute
+  * Fixed a bunch of hardcoded URLs
