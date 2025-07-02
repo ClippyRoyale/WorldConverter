@@ -99,7 +99,7 @@ Version 1.2.0 (Dec. 21, 2022): “The Layers Update”
   + Converter properly handles layers (which are now supported in Deluxe)
 
 Version 1.3.0 (Dec. 25, 2022):
-  + Updates levels to account for new water hitboxes, so water areas are 
+  + Updates levels to account for new water hitboxes, so water areas are
     playable as intended (even if the conversion isn’t 1:1)
   - Removed checkpoints (they were either taken out of Deluxe or never added
     in the first place)
@@ -112,7 +112,7 @@ Version 2.1.0 (Feb. 3, 2023):
   + App icon
   + UI improvements from Skin Converter
   + Supports new Deluxe objects: Cheep Cheep (underwater), Blooper, and Leaf
-  * Now requires Pillow to display icons 
+  * Now requires Pillow to display icons
       * Offline users: use "pip3 install pillow" in your terminal
 
 Version 2.2.0 (Mar. 1, 2023):
@@ -167,7 +167,7 @@ Version 3.1.1 (Aug. 17, 2023):
   * Fixed conversion of free-roam levels
   * Fixed crash bugs that occurred when saving to a folder you aren't allowed
     to access
-      * "Convert folder" option now saves to working directory instead of 
+      * "Convert folder" option now saves to working directory instead of
         subfolder of selected folder
 
 Version 3.1.2 (Sep. 4, 2023 / OFFLINE ONLY):
@@ -175,7 +175,7 @@ Version 3.1.2 (Sep. 4, 2023 / OFFLINE ONLY):
     aren't already installed on your computer
       * If you already have these modules installed, there's no need to update,
         as the program is otherwise unchanged
-      * The program should now run out of the box without needing to install 
+      * The program should now run out of the box without needing to install
         those modules manually. Please tell Clippy if you have any issues!
 
 Version 3.2.0 (Oct. 20, 2023):
@@ -188,7 +188,7 @@ Version 3.2.0 (Oct. 20, 2023):
         the program. Whoops!
 
 Version 3.2.1 (Oct. 27, 2023): The Warp Patch
-  + Adjust position of warp ID 3 so you don't get warped out at the wrong 
+  + Adjust position of warp ID 3 so you don't get warped out at the wrong
     location in converted levels
   + Change warp IDs 5 and 6 (up-no-offset and down-no-offset) to 1 and 2
     in versions that don't have no-offset warps (i.e. Remake)
@@ -198,13 +198,13 @@ Version 3.2.2 (Nov. 26, 2023):
     incorrectly (specifically, conveyors in R->D conversions)
   * App icon is now less blurry
   * Tweaked the yellow "!" warning icon
-      * The other icons look the same but they've been losslessly compressed so 
+      * The other icons look the same but they've been losslessly compressed so
         they take up less space
   - Removed Replit files from the GitHub
       * I’ve long since given up on Replit–GitHub integration
       * The source code is now named “deluxifier.py” instead of “main.py”
       * Just from the image compression, the size of the Deluxifier folder was
-        reduced by 25%. With the Replit files removed, that goes up to 99.7%! 
+        reduced by 25%. With the Replit files removed, that goes up to 99.7%!
         (68.4 MB -> 146 KB)
   - Removed third-party module installation requirements (PIL and requests)
   - Removed Herobrine
@@ -216,13 +216,13 @@ Version 3.3.0 (Mar. 11, 2024):
   + Add flag objects to Remake levels that have flagpoles but no flags
       * Remake STILL doesn't even show flag sprites, but Legacy requires the
         flag object to exist for level completion to work properly
-      * Converter will locate the flagpole top of the flagpole and place the 
+      * Converter will locate the flagpole top of the flagpole and place the
         flag there
   * Renamed from "Deluxifier" to "World Converter"
   * Changed default settings from Auto->Deluxe to Auto->Legacy
   * Fixed Deluxe assets URL to point to GitHub instead of the now-deactivated
     live server
-      * So yes, Deluxe levels will still be playable in Legacy or Remake if you 
+      * So yes, Deluxe levels will still be playable in Legacy or Remake if you
         convert them (as long as they don't use Discord attachments)
   * Fixed UI refresh bug (the same one fixed in Skin Converter 7.2.0)
   * Code cleanup
@@ -233,10 +233,10 @@ Version 3.4.0 (Apr. 17, 2024):
   + Legacy worlds can now use vertical and free-roam cameras
   + Added relative warp tiles to Deluxe database
       * Whoops, I forgot them this whole time
-  + Item blocks containing a mushroom or fire flower are now converted to 
+  + Item blocks containing a mushroom or fire flower are now converted to
     progressive item blocks when converting to Legacy
       * For this reason, you can now convert "from Legacy to Legacy"
-  * Vertical worlds in Remake now only set individual L/D zones to free-roam 
+  * Vertical worlds in Remake now only set individual L/D zones to free-roam
     if the zone exceeds the game's height limit
   * Improved detection of Remake vs. Legacy worlds
       * Fixed outdated netcode in version detection
@@ -265,3 +265,16 @@ Version 3.4.5 (Jun. 11, 2024):
   * Fixed bug that always turned assets URLs into absolute paths even when
     they were already absolute
   * Fixed a bunch of hardcoded URLs
+
+Version 3.4.6 (Jul. 1, 2025):
+  * Deluxe-to-Legacy conversion now defaults to using Legacy's smas_map
+      * SMAS map by LuccaDoesArts
+      * Yes, I uploaded it to the server specifically for this purpose
+  * Fixed backgrounds not rendering if loop=0
+  * Update object/tile databases for MR 6.6
+  * Linter and type-checker fixes
+  * UI code improvements from Skin Converter 7.6.1
+      * Window now takes focus upon launch -- no more searching for the icon
+        in your taskbar so you can see the window
+  * Requires Python 3.6 or later (f-strings)
+  - Removed all traces of Copilot from my VSCode environment

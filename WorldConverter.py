@@ -1,8 +1,8 @@
 '''
 MR World Converter
-Version 3.4.5
+Version 3.4.6
 
-Copyright © 2022–2024 ClippyRoyale
+Copyright © 2022–2025 ClippyRoyale
 
 LICENSE INFO:
     This program is free software: you can redistribute it and/or modify
@@ -22,8 +22,13 @@ LICENSE INFO:
 CHANGELOG: See changelog.txt
 '''
 
-import codecs, json, sys, os, webbrowser
-import urllib.request, urllib.error
+import codecs
+import json
+import os
+import sys
+import webbrowser
+import urllib.error
+import urllib.request
 from collections import abc
 from glob import glob
 from time import time
@@ -35,14 +40,14 @@ from tkinter import messagebox # not imported with tkinter by default
 
 #### BEGIN UI SETUP ####
 
-VERSION = '3.4.5'
+VERSION = '3.4.6'
 
 window = Tk()
 window.wm_title('Clippy’s World Converter')
 window.geometry('480x360')
 window.resizable(False, False)
 # Run in fullscreen on Replit only
-if os.path.isdir("/home/runner") == True:
+if os.path.isdir("/home/runner"):
     window.attributes('-fullscreen', True)
 
 app_icon = PhotoImage(file='ui/iconHD.png')
@@ -61,7 +66,7 @@ colors = {
 def relative_font_size(multiple:Union[int,float]):
     '''
     Different platforms use different default font sizes.
-    Get this system's default size to use as a base. 
+    Get this system's default size to use as a base.
     All other font sizes will be a multiple of it.
     '''
     base_font_size = tkfont.Font(font='TkDefaultFont').cget('size')
@@ -73,18 +78,18 @@ f_large = tkfont.Font(size=relative_font_size(1.5))
 f_heading = tkfont.Font(weight='bold', size=relative_font_size(1.5))
 
 footer_frame = LabelFrame(window, width=480, height=40, bg=colors['BG'])
-footer = Label(footer_frame, 
-        text='World Converter v%s — a Clippy production' % VERSION, 
+footer = Label(footer_frame,
+        text=f'World Converter v{VERSION} — a Clippy production',
         fg=colors['gray'], bg=colors['BG'])
-back_btn = Button(footer_frame, text='Back to Menu', 
+back_btn = Button(footer_frame, text='Back to Menu',
         highlightbackground=colors['BG'])
 
 main_frame = LabelFrame(window, width=480, height=320, bg=colors['BG'])
 main_frame.grid_propagate(False)
 
-menu_heading = Label(main_frame, text='Welcome to the MR World Converter', 
+menu_heading = Label(main_frame, text='Welcome to the MR World Converter',
         font=f_heading, bg=colors['BG'])
-menu_subhead = Label(main_frame, 
+menu_subhead = Label(main_frame,
         text='Because those worlds aren’t gonna convert themselves',
         font=f_italic, bg=colors['BG'])
 
@@ -120,26 +125,27 @@ def update_subhead(subhead:Label, current:int, target:int):
     '''
     rounded_pct = round(current/target*100, 1)
 
-    subhead = Label(main_frame, 
-            text='Now converting file %i of %i (%s%%)' % \
-                    (current+1, target, rounded_pct), 
-            justify='left', bg=colors['BG'])
+    subhead = Label(main_frame,
+        text=f'Now converting file {current+1} of {target} ({rounded_pct}%)',
+        justify='left', bg=colors['BG'])
     subhead.place(x=0, y=36)
 
     return subhead
 
-def button_dialog(title:str, message:abc.Sequence,
-                  buttons:Tuple[str]=('Cancel', 'Okay'), *, 
+def button_dialog(title:str, message:Union[str, List[str]],
+                  buttons:Tuple[str, ...]=('Cancel', 'Okay'), *,
                   icon:Optional[str]=None):
     '''
     Displays a dialog box with one or more buttons to the user. Holds until the
     user clicks a button. Returns the name of the button clicked.
+
     icon is one of: info, question, warning, error, done, bomb
     '''
+
     cls()
 
     button_clicked = None
-    # Local function that all button event bindings point to
+    # Nested function that all button event bindings point to
     # Sets the button_clicked variable one layer up so the function knows
     # it can return
     def button_event(index:int):
@@ -153,27 +159,30 @@ def button_dialog(title:str, message:abc.Sequence,
 
     next_y = 0
     if title:
-        dialog_title = Label(main_frame, text=title, font=f_heading, 
+        dialog_title = Label(main_frame, text=str(title), font=f_heading,
                 justify='left', bg=colors['BG'])
         dialog_title.place(x=0, y=0)
         # If there’s title text, leave space so msg_text doesn't cover it up
         next_y = 30
 
     dialog_message = []
-    if isinstance(message, str): 
-        # Convert to list if message is only one line / a string
+    # Failsafe in case message is in an invalid format
+    if not isinstance(message, list) and not isinstance(message, str):
+        message = str(message)
+    # Convert to list if message is only one line / a string
+    if isinstance(message, str):
         message = [message]
 
-    for index, item in enumerate(message): # TODO: Scroll if not enough space
-        dialog_message.append(Label(main_frame, text=item, justify='left', 
+    for index, item in enumerate(message):
+        dialog_message.append(Label(main_frame, text=item, justify='left',
                 wraplength=470, bg=colors['BG']))
 
-        # Apply bold/italic styling as needed
+        # Apply styling as needed
         if item.startswith('<b>'):
-            dialog_message[-1].config(font=f_bold, 
+            dialog_message[-1].config(font=f_bold,
                                       text=item[3:]) # strip <b> tag
-        if item.startswith('<i>'):
-            dialog_message[-1].config(font=f_italic, 
+        elif item.startswith('<i>'):
+            dialog_message[-1].config(font=f_italic,
                                       text=item[3:]) # strip <i> tag
 
         # Shorten wrapping if dialog box has icon, so text doesn’t cover it
@@ -183,13 +192,13 @@ def button_dialog(title:str, message:abc.Sequence,
         dialog_message[index].place(x=0, y=next_y)
         next_y += dialog_message[-1].winfo_reqheight() + 4
 
-    # Reworked dialogs don't support bottom text 
+    # Reworked dialogs don't support bottom text
     # (it adds unnecessary complexity).
 
     button_objs = []
     for index, item in enumerate(buttons):
         # Create new button object
-        new_btn = Button(main_frame, text=item, 
+        new_btn = Button(main_frame, text=item,
                 highlightbackground=colors['BG'],
                 command=lambda c=index: button_event(c))
         # Add to button obj list
@@ -204,42 +213,43 @@ def button_dialog(title:str, message:abc.Sequence,
         next_button_x -= 10 # a little extra space between buttons
 
     # Wait for user to click a button
-    while button_clicked == None:
+    while button_clicked is None:
         window.update()
     # Once we get here, a button has been clicked, so return the button's name
     return button_clicked
 
-def bool_dialog(title:str, message:abc.Sequence,
-                  button1='Cancel', button2='Okay', *, icon:Optional[str]=None):
+def bool_dialog(title:str, message:Union[str, List[str]],
+                  button1='Cancel', button2='Okay', *,
+                  icon:Optional[str]=None):
     '''
     Simplified version of button_dialog() that only allows 2 buttons and returns
     a boolean value. If the user clicks the right/Okay button, return True.
     Otherwise, if the user clicks the left/Cancel button, return False.
     '''
-    button_name = button_dialog(title, message, [button1, button2], icon=icon)
+    button_name = button_dialog(title, message, (button1, button2), icon=icon)
     if button_name == button2:
         return True
     else:
         return False
-    
-def yn_dialog(title:str, message:abc.Sequence,
+
+def yn_dialog(title:str, message:Union[str, List[str]],
                   button1='Yes', button2='No', *, icon:Optional[str]=None):
     '''
     yn_dialog is like bool_dialog but the buttons' return values are reversed.
     The left/Yes button returns True, and the right/No button returns false.
     '''
-    button_name = button_dialog(title, message, [button1, button2], icon=icon)
+    button_name = button_dialog(title, message, (button1, button2), icon=icon)
     if button_name == button1:
         return True
     else:
         return False
-    
-def simple_dialog(title:str, message:abc.Sequence, 
+
+def simple_dialog(title:str, message:Union[str, List[str]],
                   button='Okay', *, icon:Optional[str]=None):
     '''
     Single-button dialog. Returns None.
     '''
-    button_dialog(title, message, [button], icon=icon)
+    button_dialog(title, message, (button,), icon=icon)
 
 #### END UI CODE ####
 
@@ -260,9 +270,9 @@ AUTODETECT = 0b00000 # Only for convert_from
 # id of -1 means the tile doesn't exist in that version.
 #
 # compatibility is a binary number with bits in format <dlrci>, where:
-# - i for InfernoPlus (1.0.0 - 2.1.0), 
+# - i for InfernoPlus (1.0.0 - 2.1.0),
 #   last common ancestor of Deluxe + all others
-# - c for Classic (by Igor & Cyuubi; 2.1.1 - 3.7.0), 
+# - c for Classic (by Igor & Cyuubi; 2.1.1 - 3.7.0),
 #   last common ancestor of Remake and Legacy
 # - r for Remake (by GoNow; no version numbers),
 #   new codebase but mostly backwards-compatible with Classic levels
@@ -272,7 +282,8 @@ AUTODETECT = 0b00000 # Only for convert_from
 # - 0b11011 means it's compatible with everything but Remake
 # - Semisolid at ID 6 is only compatible with Deluxe (0b10000) because it had a
 #   different ID in Classic, Legacy, and Remake
-OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (    
+ObjDbEntry = Tuple[str, int, int, int]
+OBJ_DATABASE : Tuple[ObjDbEntry, ...] = (
     ('player',                  0b11111,1,  1),
 
     ('goombrat',                0b11000,16, 16),
@@ -287,6 +298,7 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('bowser',                  0b11111,25, 25),
     ('dry bones',               0b01000,-1, 26),
 
+    ('made-up rabbit enemy',    0b01000,-1, 30),
     ('boo',                     0b01000,-1, 31),
     ('rotodisc',                0b01000,-1, 32),
     ('fire bar',                0b11111,33, 33),
@@ -300,6 +312,8 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('cheep cheep',             0b11000,38, 41),
     ('thwomp',                  0b01000,-1, 42),
     ('tweeter',                 0b01000,-1, 43),
+    ('icicle',                  0b01000,-1, 44),
+    ('fuzzy',                   0b01000,-1, 45),
 
     ('hammer bro',              0b11111,49, 49),
     ('fire bro',                0b11000,50, 50),
@@ -314,11 +328,11 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
 
     ('coin',                    0b11111,97, 97),
 
-    ('gold flower',             0b01000,-1, 100), 
+    ('gold flower',             0b01000,-1, 100),
         # in Remake editor but unused in game
 
     ('door',                    0b01000,-1, 129),
-    ('key',                     0b01000,-1, 130), 
+    ('key',                     0b01000,-1, 130),
 
     ('platform',                0b11111,145,145),
     ('bus platform',            0b11111,146,146),
@@ -333,7 +347,8 @@ OBJ_DATABASE : Tuple[Tuple[str, int, int, int]] = (
     ('flag',                    0b11111,177,177),
     ('goalpost',                0b11000,178,178), # from SMW
 
-    ('cheep cheep spawner',     0b01000,-1, 193), 
+    ('cheep cheep spawner',     0b01000,-1, 193),
+    ('environment prop',        0b01000,-1, 200),
 
     ('text',                    0b11111,253,253),
     ('checkmark',               0b11111,254,254),
@@ -361,13 +376,14 @@ convert_to.set(DELUXE)
 use_prog = IntVar()
 
 # TILE DATABASE
-# Format: (tile_name, version_support, deluxe_id, legacy_id, remake_id, 
+# Format: (tile_name, version_support, deluxe_id, legacy_id, remake_id,
 #           (fallback1, fallback2, ...))
 # id of -1 means the tile doesn't exist in that version.
 # Fallback can be 0 (air), 1 (solid), or a valid tile_name.
 # If possible, make the last fallback supported in all versions.
 # If a version doesn't support any fallback, default to air.
-TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
+TileDbEntry = Tuple[str, int, int, int, int, tuple]
+TILE_DATABASE : Tuple[TileDbEntry, ...] = (
     # The program expects index 0 to be Air and index 1 to be Solid Standard.
     # All other indices do not have a guaranteed definition.
     ('air', 0b11111, 0, 0, 0, (0,)),
@@ -395,8 +411,8 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     # Added in Cyuubi builds (common ancestor of Remake and Legacy)
     # (sorted by Legacy ID)
     ('solid damage', 0b11110, 4, 4, 4, (1,)),
-    ('semisolid', 0b11110, 6, 5, 5, (1,)), 
-    ('semisolid weak', 0b01110, -1, 6, 6, (0,)), 
+    ('semisolid', 0b11110, 6, 5, 5, (1,)),
+    ('semisolid weak', 0b01110, -1, 6, 6, (0,)),
     ('water surface', 0b01110, -1, 8, 8, ('water', 0,)), # pushes you down
     ('water current', 0b01110, -1, 9, 9, ('water', 0,)), # pushes you left/right
     ('water', 0b11110, 7, 7, 7, (0,)),
@@ -404,20 +420,20 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
 
     # Added in Remake (sorted by Remake ID)
     ('solid ice', 0b11100, 10, 10, 10, (1,)),
-    ('note block', 0b11100, 11, 11, 11, (1,)), 
+    ('note block', 0b11100, 11, 11, 11, (1,)),
         # ^ called "pop block" in Remake but works the same
     ('conveyor', 0b00100, -1, -1, 12, (1,)),
         # ^ in Deluxe but as 2 different tiles
 
     # Added in Legacy 4.x (sorted by Legacy ID)
     ('item note block', 0b11000, 12, 12, -1, ('note block', 'item block',)),
-    ('ice -> tile', 0b01000, -1, 13, -1, ('ice -> object', 'solid ice', 1,)), 
+    ('ice -> tile', 0b01000, -1, 13, -1, ('ice -> object', 'solid ice', 1,)),
     ('flip block', 0b11000, 8, 14, -1, ('solid breakable',)),
     ('air damage', 0b11000, 5, 15, -1, ('solid damage', 0,)),
     ('ice -> object', 0b11000, 13, 16, -1, ('solid ice', 1,)),
     ('item block progressive', 0b11000, 20, 20, -1, ('item block',)),
     ('semisolid ice', 0b01000, -1, 23, -1, ('semisolid', 1,)),
-    ('item block invisible progressive', 0b11000, 27, 26, -1, 
+    ('item block invisible progressive', 0b11000, 27, 26, -1,
         ('item block invisible',)),
     ('scroll lock x', 0b11000, 30, 30, -1, (0,)),
     ('scroll unlock x', 0b11000, 31, 31, -1, (0,)),
@@ -433,13 +449,13 @@ TILE_DATABASE : Tuple[Tuple[str, int, int, int, tuple]] = (
     # ONLY in Deluxe (sorted by Deluxe ID)
     ('conveyor left', 0b10000, 14, -1, -1, ('conveyor', 1,)),
     ('conveyor right', 0b10000, 15, -1, -1, ('conveyor', 1,)),
-    ('item block regen', 0b10000, 26, -1, -1, 
+    ('item block regen', 0b10000, 26, -1, -1,
         ('item block infinite', 'item block',)),
     ('warp tile relative', 0b10000, 80, -1, -1, (0,)),
         # ^ not compatible with td32
     ('warp tile random', 0b10000, 87, -1, -1, (0,)),
     ('message block', 0b10000, 241, -1, -1, (1,)),
-    ('sound block', 0b10000, 239, -1, -1, (0,)), 
+    ('sound block', 0b10000, 239, -1, -1, (0,)),
 
     # Added in Legacy 5.x and later (sorted by Legacy ID)
     ('half tile bumpable', 0b01000, -1, 27, -1, ('solid bumpable',)),
@@ -460,12 +476,12 @@ replacement_list = []
 # KEY: the object's ID in L/D
 # VALUE: the tuple index of the object's database entry
 # Loading this from a file would be faster but also less secure
-deluxe_obj_lookup : Dict[int, Tuple[str, int, int, int]] = {}
+deluxe_obj_lookup : Dict[int, int] = {}
 for i_index, i_item in enumerate(OBJ_DATABASE):
     obj_id = i_item[2]
     if obj_id >= 0: # negative ID = obj doesn't exist in this version
         deluxe_obj_lookup[obj_id] = i_index
-legacy_obj_lookup : Dict[int, Tuple[str, int, int, int]] = {}
+legacy_obj_lookup : Dict[int, int] = {}
 for i_index, i_item in enumerate(OBJ_DATABASE):
     obj_id = i_item[3]
     if obj_id >= 0: # negative ID = obj doesn't exist in this version
@@ -476,17 +492,17 @@ for i_index, i_item in enumerate(OBJ_DATABASE):
 # KEY: the tile's ID in R/L/D
 # VALUE: the tuple index of the tile's database entry
 # Loading this from a file would be faster but also less secure
-deluxe_tile_lookup : Dict[int, Tuple[str, int, int, int, tuple]] = {}
+deluxe_tile_lookup : Dict[int, int] = {}
 for i_index, i_item in enumerate(TILE_DATABASE):
     tile_id = i_item[2]
     if tile_id >= 0: # negative ID = tile doesn't exist in this version
         deluxe_tile_lookup[tile_id] = i_index
-legacy_tile_lookup : Dict[int, Tuple[str, int, int, int, tuple]] = {}
+legacy_tile_lookup : Dict[int, int] = {}
 for i_index, i_item in enumerate(TILE_DATABASE):
     tile_id = i_item[3]
     if tile_id >= 0: # negative ID = tile doesn't exist in this version
         legacy_tile_lookup[tile_id] = i_index
-remake_tile_lookup : Dict[int, Tuple[str, int, int, int, tuple]] = {}
+remake_tile_lookup : Dict[int, int] = {}
 for i_index, i_item in enumerate(TILE_DATABASE):
     tile_id = i_item[4]
     if tile_id >= 0:
@@ -514,7 +530,7 @@ def get_obj_id_for_version(obj:Tuple[str, int, int, int]) -> int:
         new_id = obj[3]
     return new_id
 
-def get_tile_by_name(name:str) -> Tuple[str, int, int, int, tuple]:
+def get_tile_by_name(name:str) -> TileDbEntry:
     '''
     Given a tile's standard string name as it appears in the above database,
     return that tile's database entry.
@@ -525,7 +541,7 @@ def get_tile_by_name(name:str) -> Tuple[str, int, int, int, tuple]:
     # If name doesn't exist in database, return air
     return TILE_DATABASE[0]
 
-def get_tile_id_for_version(tile:Tuple[str, int, int, int, tuple]) -> int:
+def get_tile_id_for_version(tile:TileDbEntry) -> int:
     '''
     Given a tile database entry, return the correct tile data int for the game
     version set in the global variable convert_to
@@ -540,7 +556,7 @@ def get_tile_id_for_version(tile:Tuple[str, int, int, int, tuple]) -> int:
 
 def convert_tile(old_td:list) -> Union[list, int]:
     '''
-    Convert a tile from one version to another, including any ID changes and 
+    Convert a tile from one version to another, including any ID changes and
     replacements of incompatible tiles.
     Takes in an int[5] list, i.e. the Deluxe tile format.
     Returns the new tile in the target version's format.
@@ -589,8 +605,8 @@ def convert_tile(old_td:list) -> Union[list, int]:
         replacement = ('error', 'error')
 
         for i in db_entry[5]: # tuple of possible fallback tiles
-            if i == 0 or i == 1: 
-                # In the database, 0 and 1 are accepted shorthands for 
+            if i == 0 or i == 1:
+                # In the database, 0 and 1 are accepted shorthands for
                 # air and solid, respectively -- for convenience
                 fallback_id = i
                 fallback_entry = TILE_DATABASE[i]
@@ -599,7 +615,7 @@ def convert_tile(old_td:list) -> Union[list, int]:
                 fallback_id = get_tile_id_for_version(fallback_entry)
 
             # If the fallback tile is compatible with the target version:
-            if (fallback_entry[1] & convert_to.get()):
+            if fallback_entry[1] & convert_to.get():
                 new_td[3] = fallback_id
 
                 # Get data for fallback tile to add to log
@@ -620,16 +636,16 @@ def convert_tile(old_td:list) -> Union[list, int]:
                         new_td[3] = 1 # Solid standard
 
                 # Convert conveyors from Deluxe to Remake format
-                # Make the custom Remake speed about the same as 
+                # Make the custom Remake speed about the same as
                 # the only Deluxe speed
                 if db_entry[0] == 'conveyor left' and \
                         convert_to.get() == REMAKE:
-                    new_td[4] = 124 
+                    new_td[4] = 124
                 if db_entry[0] == 'conveyor right' and \
                         convert_to.get() == REMAKE:
-                    new_td[4] = 132 
+                    new_td[4] = 132
 
-                # Make former progressive item blocks 
+                # Make former progressive item blocks
                 # always spit out a mushroom
                 if 'progressive' in db_entry[0]:
                     new_td[4] = 81 # mushroom
@@ -642,7 +658,7 @@ def convert_tile(old_td:list) -> Union[list, int]:
                 # END SPECIAL CASES
 
                 break
-            # If fallback tile is NOT compatible with target 
+            # If fallback tile is NOT compatible with target
             # version, do another round of the loop
 
         # When loop is done, leave note that tile was replaced
@@ -652,7 +668,7 @@ def convert_tile(old_td:list) -> Union[list, int]:
     # End fallback code
 
     if convert_to.get() == DELUXE:
-        # If we're converting to Deluxe, 
+        # If we're converting to Deluxe,
         # we're already using the right tile format
         return new_td
     else:
@@ -669,25 +685,26 @@ def web_file_exists(path:str):
     Return None if GoNow forgot to renew his TLS certificate again.
     '''
     try:
-        # Assign to nothing, just call to check for error
-        urllib.request.urlopen(path).status
+        # Assign to throwaway variable, just call to check for error
+        _ = urllib.request.urlopen(path).status
         return True
-    except AttributeError: 
+    except AttributeError:
         # If using Python 3.8.x or earlier, use `code` instead of `status`
-        # Assign to nothing, just call to check for error
-        urllib.request.urlopen(path).code
+        # Assign to throwaway variable, just call to check for error
+        _ = urllib.request.urlopen(path).code
         return True
     except urllib.error.HTTPError:
         # If the path leads to a 404, or the server is down
         return False
-    except urllib.error.URLError: 
-        # If Remake's certificate expired AGAIN. (URLError could also mean 
+    except urllib.error.URLError:
+        # If Remake's certificate expired AGAIN. (URLError could also mean
         # "no internet", but that case is handled elsewhere.)
         return None
 
 def extract_tile(tile:abc.Sequence):
     '''
-    Given a tile of unknown format, return the tile normalized to a list of 5 ints
+    Given a tile of unknown format, return
+    the tile normalized to a list of 5 ints
     '''
     global warnings
 
@@ -695,7 +712,7 @@ def extract_tile(tile:abc.Sequence):
     extracted_tile = [30,0,0,0,0]
 
     try:
-        if type(tile) == list:
+        if isinstance(tile, list):
             # Deluxe: list-based format
             # ValueError = not an int (e.g. extra data in relative warp tiles)
             # IndexError = out of range (e.g. if tile data is just [30])
@@ -719,7 +736,7 @@ def extract_tile(tile:abc.Sequence):
                 extracted_tile[4] = int(tile[4])
             except (ValueError, IndexError):
                 extracted_tile[4] = 0
-        elif type(tile) == int:
+        elif isinstance(tile, int):
             # Legacy and earlier: td32
             extracted_tile[0] = tile % 2**11 # sprite: 11-bit
             extracted_tile[1] = tile // 2**11 % 2**4 # bump state: 4-bit
@@ -729,7 +746,7 @@ def extract_tile(tile:abc.Sequence):
         # Else, it's a format we just don't recognize at all, so we stick to
         # the default extracted_tile
     except Exception:
-        warnings += 'Failed to convert tile: %s \n' % tile
+        warnings += f'Failed to convert tile: {tile}\n'
 
     return extracted_tile
 
@@ -745,7 +762,7 @@ def absolute_path(version: int, rel_path: str):
     else: # LEGACY
         return 'https://raw.githubusercontent.com/mroyale/assets/legacy/' + \
                 rel_path
-    
+
 def is_abs_path(url: str):
     return (url.startswith('http://') or \
             url.startswith('https://') or \
@@ -753,7 +770,7 @@ def is_abs_path(url: str):
 
 def convert(open_path: str, save_path: str):
     '''
-    Convert 1 world file from Legacy TO DELUXE, and return string 
+    Convert 1 world file from Legacy TO DELUXE, and return string
     containing all converter warnings
     '''
     global convert_fail, warnings
@@ -762,9 +779,9 @@ def convert(open_path: str, save_path: str):
 
     if open_path == save_path:
         convert_fail = True
-        error_msg = 'For your safety, this program does not allow you to \
-overwrite your existing world files. Please try a different file path.\n%s\n'\
-                % open_path
+        error_msg = f'For your safety, this program does not allow you to \
+overwrite your existing world files. \
+Please try a different file path.\n{open_path}\n'
         return error_msg
 
     try:
@@ -776,25 +793,23 @@ overwrite your existing world files. Please try a different file path.\n%s\n'\
         # Not sure if we can get here now that the GUI handles file opening,
         # but this can't hurt
         convert_fail = True
-        error_msg = 'The selected file does not exist.\n%s\n' \
-                    % open_path
+        error_msg = f'The selected file does not exist.\n{open_path}\n'
         return error_msg
     except IsADirectoryError:
         convert_fail = True
-        error_msg = 'The selected file is a folder.\n%s\n' \
-                    % open_path
+        error_msg = f'The selected file is a folder.\n{open_path}\n'
         return error_msg
     except UnicodeDecodeError:
         # File is an image, movie, or other binary
         convert_fail = True
-        error_msg = '''The selected file is a binary file such as an image, \
-song, or movie, and could not be read.\n%s\n''' % open_path
+        error_msg = f'The selected file is a binary file such as an image, \
+song, or movie, and could not be read.\n{open_path}\n'
         return error_msg
     except json.decoder.JSONDecodeError:
         # File is not JSON
         convert_fail = True
-        error_msg = '''The selected text file could not be read.
-Are you sure it’s a world?\n%s\n''' % open_path
+        error_msg = f'''The selected text file could not be read.
+Are you sure it’s a world?\n{open_path}\n'''
         return error_msg
 
     # Create a file at the save path if it doesn't already exist.
@@ -805,28 +820,29 @@ Are you sure it’s a world?\n%s\n''' % open_path
     except PermissionError:
         # If user tries to save to a folder they don't have write access to
         convert_fail = True
-        error_msg = '''Your computer blocked World Converter from saving to \
-the selected folder: \n%s\n''' % save_path
+        error_msg = f'Your computer blocked World Converter from saving to \
+the selected folder: \n{save_path}\n'
         return error_msg
 
     try:
-        # Might as well check for layers now so we don't have to do it over and over again
+        # Might as well check for layers now,
+        # so we don't have to do it over and over again
         if 'layers' in content['world'][0]['zone'][0]:
             has_layers = True
         else:
             has_layers = False
 
         # Auto-detect version of source file if necessary
-        # Why is this a while loop when I only want to run it once? 
+        # Why is this a while loop when I only want to run it once?
         # Because Python doesn't have goto
         while convert_from.get() == AUTODETECT:
             # Test for Deluxe format by checking if tiles are lists
             if has_layers:
-                dx_check = type(content['world'][0]['zone'][0]['layers'][0]\
-                        ['data'][0][0]) == list
+                dx_check = isinstance(content['world'][0]['zone'][0]['layers']\
+                        [0]['data'][0][0], list)
             else:
-                dx_check = type(content['world'][0]['zone'][0]\
-                        ['data'][0][0]) == list
+                dx_check = isinstance(content['world'][0]['zone'][0]\
+                        ['data'][0][0], list)
             if dx_check:
                 convert_from.set(DELUXE)
                 break
@@ -858,9 +874,9 @@ the selected folder: \n%s\n''' % save_path
                         # First try Legacy URL
                         legacy_url = absolute_path(LEGACY, item['src'])
                         exists_in_legacy = web_file_exists(legacy_url)
-                        if exists_in_legacy == True:
+                        if exists_in_legacy is True:
                             convert_from.set(LEGACY)
-                        elif exists_in_legacy == None:
+                        elif exists_in_legacy is None:
                             convert_from.set(LEGACY)
                             warnings += \
 'Security warning on Legacy map image.\n'
@@ -868,17 +884,17 @@ the selected folder: \n%s\n''' % save_path
                             # If it's not in Legacy, fall back to Remake URL
                             remake_url = absolute_path(REMAKE, item['src'])
                             exists_in_remake = web_file_exists(remake_url)
-                            if exists_in_remake == True:
+                            if exists_in_remake is True:
                                 convert_from.set(REMAKE)
-                            elif exists_in_remake == None:
+                            elif exists_in_remake is None:
                                 convert_from.set(REMAKE)
                                 warnings += \
 'Security warning on Remake map image, what a surprise.\n'
                             # If it's not in Legacy or Remake, give up
                             else:
                                 warnings += \
-'Couldn’t find the map sheet %s in Legacy or Remake. Defaulting to Legacy for \
-the world version.\n' % open_path.split(os.sep)[-1]
+f'Couldn’t find the map sheet {open_path.split(os.sep)[-1]} in Legacy or \
+Remake. Defaulting to Legacy for the world version.\n'
                     except urllib.error.HTTPError:
                         # If test page 404s, fall through to the "detect
                         # everything else as Legacy" code
@@ -893,7 +909,7 @@ detection will be less accurate.\n'
                         pass
                     # Since we've found the map sheet, we don't need to
                     # keep looping anymore
-                    break 
+                    break
 
             # Remake-exclusive feature check #1:
             # Fire bars have 4 params in Remake, and 3 in Legacy
@@ -908,30 +924,30 @@ detection will be less accurate.\n'
             for level_i, level in enumerate(content['world']): # Loop thru lvls
                 for zone_i, zone in enumerate(level['zone']): # Loop thru zones
                     if has_layers:
-                        for layer_i, layer in enumerate(zone['layers']): 
+                        for layer_i, layer in enumerate(zone['layers']):
                                                         # Loop thru layers
-                            for row_i, row in enumerate(layer['data']): 
+                            for row_i, row in enumerate(layer['data']):
                                                             # Loop thru rows
-                                for tile_i, tile in enumerate(row): 
+                                for tile_i, tile in enumerate(row):
                                                             # Loop tiles by col
                                     test_tile = extract_tile(tile)
                                     # Check for conveyor tile (see below)
                                     if test_tile[3] == 12 \
                                             and test_tile[4] >= 112 \
-                                            and test_tile[4] < 144: 
+                                            and test_tile[4] < 144:
                                         convert_from.set(REMAKE)
                     else:
-                        for row_i, row in enumerate(zone['data']): 
+                        for row_i, row in enumerate(zone['data']):
                                                         # Loop thru rows
-                            for tile_i, tile in enumerate(row): 
+                            for tile_i, tile in enumerate(row):
                                                         # Loop tiles by col
                                 test_tile = extract_tile(tile)
                                 # Check for conveyor tile (ID 12 in Remake).
                                 # In Legacy, ID 12 = Item Note Block, so we also
-                                # make sure the Extra Data has a reasonable speed
+                                # make sure Extra Data has a reasonable speed
                                 # value that ISN'T a valid object ID.
                                 if test_tile[3] == 12 and test_tile[4] >= 112 \
-                                        and test_tile[4] < 144: 
+                                        and test_tile[4] < 144:
                                     convert_from.set(REMAKE)
 
             # Treat everything else as Legacy because it has more tile options
@@ -961,7 +977,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             for level_i, level in enumerate(content['world']):
                 for zone_i, zone in enumerate(level['zone']):
                     # If world was vertical, add free-roam camera to each zone
-                    if content['world'][level_i]['zone'][zone_i]['camera'] != 0:
+                    if zone['camera'] != 0:
                         vertical_world = True
                         break
                 if vertical_world: # Second break after detecting vertical
@@ -969,19 +985,18 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
             # If we detected a vertical zone at any point in the loop,
             # add the vertical flag to the world
             content['vertical'] = 'true'
-        
+
         if convert_to.get() == DELUXE:
             # Add extra effects sprite sheet that's not in Legacy or Remake
             content['resource'].append({"id":"effects",
                     "src":"img/game/smb_effects.png"})
-            
+
             # Add audio override so Legacy worlds play their original music/SFX
             # if convert_from.get() == REMAKE:
             #     content["audioOverrideURL"] = absolute_path(REMAKE,'audio/')
             if convert_from.get() & (LEGACY|CLASSIC|INFERNO):
                 content["audioOverrideURL"] = absolute_path(LEGACY, 'audio/')
-                
-        if convert_from.get() == REMAKE:
+
             # Remove effects sheet that's only in Deluxe
             for index, dict_ in enumerate(content['resource']):
                 if dict_['id'] == 'effects':
@@ -999,8 +1014,8 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                 del content['musicOverridePath']
             if 'soundOverridePath' in content:
                 del content['soundOverridePath']
-            # NOTE: This is only necessary because the Java (Inferno/Deluxe) 
-            # server rejects any world with a parameter it doesn't recognize, 
+            # NOTE: This is only necessary because the Java (Inferno/Deluxe)
+            # server rejects any world with a parameter it doesn't recognize,
             # while the Python (Classic/Legacy) server simply ignores unknown
             # parameters. (The Remake server also ignores them.)
 
@@ -1015,7 +1030,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     f"Converted with Clippy's World Converter (v{VERSION})"
             if 'mode' not in content:
                 content['mode'] = 'royale'
-            # Legacy music overrides only work with relative paths, 
+            # Legacy music overrides only work with relative paths,
             # not full URLs, so we can't play music in Legacy yet
 
         # Turn lobbies into regular worlds so they don't crash the game
@@ -1030,15 +1045,15 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                 if not is_abs_path(content['assets']):
                     content['assets'] = absolute_path(LEGACY,
                                                   "assets/"+content['assets'])
-            # If the world doesn't specify assets (i.e. Classic & Remake), 
-            # use Legacy assets because they're a superset of Classic/Remake's 
+            # If the world doesn't specify assets (i.e. Classic & Remake),
+            # use Legacy assets because they're a superset of Classic/Remake's
             # hardcoded animations
             else:
                 content['assets'] = absolute_path(LEGACY,
                         'assets/assets.json')
         # Similar situation but for Deluxe->Legacy assets
         elif convert_from.get() == DELUXE and convert_to.get() == LEGACY:
-            if 'assets' in content: 
+            if 'assets' in content:
                 if not is_abs_path(content['assets']):
                     content['assets'] = absolute_path(DELUXE,
                                                   "assets/"+content['assets'])
@@ -1073,12 +1088,12 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                 if convert_to.get() == DELUXE:
                     content['resource'][index]['src'] = absolute_path(DELUXE,
                             'img/game/smb_obj.png')
-                # Converting from Deluxe to Any: Switch to Legacy default obj
-                # Don't need a special case for Deluxe->Remake because Legacy
-                # obj is a superset of Remake's
+                # Converting from Deluxe to Any: Switch to Legacy's SMAS obj
                 elif convert_from.get() == DELUXE:
                     content['resource'][index]['src'] = absolute_path(LEGACY,
-                            'img/game/smb_obj.png')
+                            'img/game/smas_obj.png')
+                # Don't need a special case for Legacy->Remake because Legacy
+                # obj is a superset of Remake's
                 # If the conversion doesn't involve Deluxe but it uses a
                 # relative path
                 elif not is_abs_path(item['src']):
@@ -1104,6 +1119,13 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     zone_height = len(zone['layers'][0]['data'])
                 else:
                     zone_height = len(zone['data'])
+                # Calculate zone width (for background looping)
+                zone_width = 0
+                if convert_from.get() == DELUXE:
+                    if has_layers:
+                        zone_width = len(zone['layers'][0]['data'][0])
+                    else:
+                        zone_width = len(zone['data'][0])
 
                 if convert_to.get() == DELUXE:
                     # Delete world data that isn't in Deluxe because it
@@ -1119,7 +1141,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                                 content['world'][level_i]['zone'][zone_i]:
                         del content['world'][level_i]['zone'][zone_i]\
                                 ['levelendoff']
-                    
+
                     # If world was vertical in Remake, add free-roam camera
                     # to each zone in Deluxe if zone is above height limit 14
                     if vertical_world and zone_height > 14:
@@ -1135,6 +1157,14 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     for i in zone['background']:
                         dx_url = absolute_path(DELUXE, i['url'])
                         i['url'] = dx_url
+                        # Legacy doesn't yet support infinite bg looping,
+                        # so we need to calculate it from zone width + speed.
+                        # Assume bg image width is ≥128px (the lowest width
+                        # found in Deluxe's assets). In most cases our estimate
+                        # will be too high, but that should be fine because
+                        # there's background culling
+                        if i['loop'] <= 0:
+                            i['loop'] = (zone_width // 8) + 1
 
                 # Adjust position of left warp exits
                 # Remake and Legacy have a bug where you need to place a warp
@@ -1162,7 +1192,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                                 warp['pos'] -= (warp['pos'] % 65536)
                         elif convert_from.get() == DELUXE:
                             # Shift 3 right to "incorrect" position
-                            # Note that warps CAN be placed outside the zone 
+                            # Note that warps CAN be placed outside the zone
                             # as long as they're to the RIGHT
                             warp['pos'] += 3
 
@@ -1180,8 +1210,8 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                                 # original format
                                 old_tile = extract_tile(tile)
 
-                                # Overwrite the old tiledata with the new 
-                                # tile in the appropriate format 
+                                # Overwrite the old tiledata with the new
+                                # tile in the appropriate format
                                 # (list or td32, depending on game version)
                                 content['world'][level_i]['zone'][zone_i]\
                                         ['layers'][layer_i]['data']\
@@ -1217,8 +1247,8 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                             # original format
                             old_tile = extract_tile(tile)
 
-                            # Overwrite the old tiledata with the new 
-                            # tile in the appropriate format 
+                            # Overwrite the old tiledata with the new
+                            # tile in the appropriate format
                             # (list or td32, depending on game version)
                             content['world'][level_i]['zone'][zone_i]['data']\
                                     [row_i][tile_i] = \
@@ -1252,7 +1282,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                             # a flag object if the zone has a flagpole.
                             if flagpole_pos is None \
                                     and (old_tile[3] == 161):
-                                # Log the highest position with a flagpole 
+                                # Log the highest position with a flagpole
                                 # tile, so we can place a flag object there
                                 # if necessary
                                 flagpole_pos = (tile_i, row_i) # (x, y) coord
@@ -1269,7 +1299,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     # STOP
                     if obj_i >= len(zone['obj']):
                         break
-                    
+
                     # Object is incompatible if it's either:
                     #   - Not in the list of all objects
                     #   - In the list but not flagged as supported in
@@ -1308,7 +1338,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
 
                     # Remake<->Legacy fire bar conversion
                     # Deluxe only has 2 params (phase & length), like Classic
-                    if obj_entry[0] == 'fire bar':
+                    if obj_entry and obj_entry[0] == 'fire bar':
                         if convert_from.get() == REMAKE \
                                 and convert_to.get() == LEGACY:
                             # Remake firebar params:
@@ -1388,7 +1418,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                     # Deluxe<->Legacy cheep cheep conversion
                     # In Deluxe, the variant param is 0=green, 1=red
                     # In Legacy, the variant param is 0=red, 1=gray
-                    if obj_entry[0] == 'cheep cheep' \
+                    if obj_entry and obj_entry[0] == 'cheep cheep' \
                             and convert_from.get() & (DELUXE|LEGACY) \
                             and convert_to.get() & (DELUXE|LEGACY) \
                             and convert_from.get() != convert_to.get():
@@ -1407,9 +1437,8 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                                 # Default value if a param is invalid or blank
                                 old_param[0] = 0 # variant
 
-
                     # FLAG CHECK
-                    if obj_entry[0] == 'flag':
+                    if obj_entry and obj_entry[0] == 'flag':
                         has_flag = True
 
                     # STEP
@@ -1419,7 +1448,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                 # add one at the position we found earlier
                 if flagpole_pos is not None and not has_flag:
                     # Create object
-                    new_flag_obj : Dict[str, any] = {
+                    new_flag_obj : Dict[str, Any] = {
                         'type': 177,
                         'pos': flagpole_pos[0] + \
                             (zone_height - 1 - flagpole_pos[1]) * (2**16),
@@ -1444,7 +1473,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
     # Close the file to prevent bugs that occur in large levels
     write_file.close()
 
-    warnings += '\nYOUR CONVERTED WORLD HAS BEEN SAVED TO:\n'+save_path+'\n\n'
+    warnings += f'\nYOUR CONVERTED WORLD HAS BEEN SAVED TO:\n{save_path}\n\n'
 
     # Report the IDs of incompatible objects that were removed
     if removed_objects:
@@ -1462,7 +1491,7 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
                 ]
             else: # unknown/invalid object ID
                 removed_obj_entry = UNKNOWN_OBJ
-            warnings += '%i (%s)' % (item, removed_obj_entry[0])
+            warnings += f'{item} ({removed_obj_entry[0]})'
             # Add comma if we aren't at the end of the removed objects list
             if index < (len(removed_objects) - 1):
                 warnings += ', '
@@ -1471,8 +1500,8 @@ defaulting to Legacy. Please check to make sure this is correct.\n'
     # Report the IDs of incompatible tiles that were replaced
     if replacement_list:
         for i in replacement_list:
-            warnings += 'Incompatible tile definition “%s” \
-replaced with “%s”\n' % (i[0], i[1])
+            warnings += f'Incompatible tile definition “{i[0]}” \
+replaced with “{i[1]}”\n'
     # Tiles that work the same but have different IDs across versions are
     # converted silently as of v3.0.0
 
@@ -1480,7 +1509,7 @@ replaced with “%s”\n' % (i[0], i[1])
 
 def game_ver_str(v:IntVar):
     '''
-    Given an IntVar (from convert_from or convert_to), 
+    Given an IntVar (from convert_from or convert_to),
     return the string associated with that game version number
     (e.g. 'INFERNO' for v=1)
     '''
@@ -1502,11 +1531,11 @@ def game_ver_str(v:IntVar):
 
 def convert_file():
     '''
-    Ask user for a single file, then pass its path to the main 
+    Ask user for a single file, then pass its path to the main
     convert() function
     '''
     open_path = filedialog.askopenfilename(
-        title='Select a world file to convert', 
+        title='Select a world file to convert',
         # filetypes=[('MR World JSON', '*.json *.txt *.game')],
         initialdir='./')
     # If script file path is still empty, user cancelled, back to menu
@@ -1533,13 +1562,13 @@ def convert_file():
     t2 = time()
 
     # Show off how fast my program is
-    done_heading = 'Done in %f seconds' % (t2-t1)
+    done_heading = f'Done in {round(t2-t1, 3)} seconds'
     # Overwrite done message if conversion failed
     if convert_fail:
         done_heading = 'Failed to convert world'
 
     # Tell the user the conversion is done
-    simple_dialog(done_heading, final_warnings, 'Continue', 
+    simple_dialog(done_heading, final_warnings, 'Continue',
                   icon=('error' if convert_fail else 'done'))
     menu()
 
@@ -1565,16 +1594,16 @@ def convert_folder():
     all_warnings = '' # distinct from global warnings because it doesn't reset
                       # for each file
 
-    # Make a folder (inside the working directory) 
+    # Make a folder (inside the working directory)
     # to drop all the converted worlds in
     save_dir = './converted'
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     else:
-        # If there's already a subfolder called _converted, 
+        # If there's already a subfolder called _converted,
         # tack a number on the end
         i = 1
-        # Keep trying numbers until we get a folder name 
+        # Keep trying numbers until we get a folder name
         # that doesn't exist yet
         while os.path.exists(save_dir + str(i)):
             i += 1
@@ -1584,7 +1613,7 @@ def convert_folder():
         os.makedirs(save_dir)
 
     # Set up progress updates
-    heading = Label(main_frame, text='Converting %i files' % len(files),
+    heading = Label(main_frame, text=f'Converting {len(files)} files',
             font=f_heading, bg=colors['BG'])
     heading.place(x=0, y=0)
     subhead = Label()
@@ -1614,24 +1643,24 @@ def convert_folder():
     t2 = time()
 
     # Show off how fast my program is
-    done_heading = 'Done in %f seconds' % (t2-t1)
+    done_heading = f'Done in {round(t2-t1, 3)} seconds'
     # No "Failed to convert" message for folder conversions
     # because we're not converting a single world
 
     # Tell the user the conversion is done
-    simple_dialog(done_heading, 
-['All converted worlds have been saved to the folder with the path “%s”.' % \
- save_dir, 'If there were any converter warnings, they have been logged to \
+    simple_dialog(done_heading,
+[f'All converted worlds have been saved to the folder with path “{save_dir}”.',
+ 'If there were any converter warnings, they have been logged to \
 _WARNINGS.LOG.'], 'Continue', icon='done')
     menu()
 
 def setup():
     #### INITIAL GUI SETUP ####
-    # setup is a separate function from menu() 
+    # setup is a separate function from menu()
     # because we only need to do everything here once
 
     # Place frames
-    main_frame.place(x=0, y=0) 
+    main_frame.place(x=0, y=0)
     footer_frame.place(x=0, y=320)
     # Note that all object positions are RELATIVE to their parent frame
 
@@ -1640,11 +1669,13 @@ def setup():
     back_btn.place(x=470, y=15, anchor=E)
     back_btn.bind('<Button-1>', lambda _: menu())
 
+    # Put window on top
+    window.focus_force()
     # Display message of the day
     motd()
     # Show menu
     menu()
-        
+
 def menu():
     cls()
 
@@ -1666,12 +1697,12 @@ def menu():
             command=convert_folder)
     btn_run_multi.place(x=240, y=240, anchor=NW)
 
-    btn_help = Button(main_frame, text='Warnings', 
+    btn_help = Button(main_frame, text='Warnings',
             highlightbackground=colors['BG'],
             command=warnings_bugs)
     btn_help.place(x=240, y=280, anchor=NE)
 
-    btn_exit = Button(main_frame, text='Exit', 
+    btn_exit = Button(main_frame, text='Exit',
                       highlightbackground=colors['BG'],
                       command=exit_app)
     btn_exit.place(x=240, y=280, anchor=NW)
@@ -1696,7 +1727,7 @@ def menu():
     ]
     for index, item in enumerate(col1_options):
         item.place(x=80, y=100+(20*index))
-    
+
     col2_header = Label(main_frame, text='Convert TO:', font=f_bold,
                         bg=colors['BG'])
     col2_header.place(x=240, y=80)
@@ -1719,8 +1750,8 @@ def menu():
         item.place(x=240, y=100+(20*index))
 
     # Checkbox options
-    prog_option = Checkbutton(main_frame, 
-            text='Use progressive item boxes (Legacy/Deluxe only)', 
+    prog_option = Checkbutton(main_frame,
+            text='Use progressive item boxes (Legacy/Deluxe only)',
             bg=colors['BG'], variable=use_prog)
     prog_option.select()
     prog_option.place(x=80, y=200)
@@ -1730,7 +1761,7 @@ def menu():
     window.mainloop()
 
 def warnings_bugs():
-    simple_dialog('WARNING - HEALTH AND SAFETY', 
+    simple_dialog('WARNING - HEALTH AND SAFETY',
         [
             'This program is designed for use in private lobbies, or as a \
 starting point for manual conversion. It is not designed to be used to put \
@@ -1748,58 +1779,63 @@ assets.json animations will play at 2× speed in Deluxe since Deluxe is \
         ], icon='warning')
     menu()
 
-'''
-For each line, everything before the first space is the full list versions 
-that should show the message. The rest of the line is the message itself.
-The program displays a maximum of 1 MOTD -- the first that matches its version.
-
-EXAMPLE MOTD FORMAT:
-
-# This line is a comment and will be ignored.
-u_2.3.0 Version 3.0.0 is now available! Click the "View Update" button \
-    to open GitHub and download the update.
-2.2.1_2.2.2 WARNING: Please update your program to 2.3.0 or later. \
-    The version you're currently using has a bug that could damage your files.
-* We will only be adding the W.
-
-This version of the program would display "We will only be adding the W."
-because it doesn't match any of the versions specified for the warnings.
-'''
 def motd():
     '''
-    Download and display the online Message of the Day
+    Download and display the online Message of the Day.
+
+    For each line, everything before the first space is the full list versions
+    that should show the message. The rest of the line is the message itself.
+    The program displays *up to 1* MOTD (the first that matches its version).
+
+    EXAMPLE MOTD FORMAT:
+
+    # This line is a comment and will be ignored.
+    u_2.3.0 Deluxifier v3.0.0 is now available!^Click the "View Update" button \
+        to open Github and download the update.
+    # Use caret (^) for newlines.
+    2.2.1_2.2.2 WARNING: Please update your program to 2.3.0 or later. \
+        Your current version has a bug that could damage your files.
+    * Chat was a mistake.
+
+    This version of the program would display "Chat was a mistake."
+    because it doesn't match any of the versions specified for the warnings.
     '''
+
     motd_url = 'https://raw.githubusercontent.com/ClippyRoyale/\
-WorldConverter/main/motd.txt'
+SkinConverter/main/motd.txt'
     try:
         # Download and read MOTD
         urllib.request.urlretrieve(motd_url, 'motd.txt')
         motd_file = open('motd.txt', encoding='utf-8')
         motd_lines = motd_file.read().splitlines()
+        motd_data : List[List[str]] = []
+        motd_file.close()
         for i in range(len(motd_lines)):
             # Split into version and message
-            motd_lines[i] = motd_lines[i].split(' ', 1) 
-            if (len(motd_lines[i]) == 2) and \
-                    ((VERSION in motd_lines[i][0]) or \
-                        (motd_lines[i][0] == '*')):
-                motd_text = motd_lines[i][1].replace('^','\n')
+            motd_data[i] = motd_lines[i].split(' ', 1)
+            if (len(motd_lines[i]) >= 2) and \
+                    ((VERSION in motd_data[i][0]) or \
+                        (motd_data[i][0] == '*')):
+                motd_text = motd_data[i][1].replace('^','\n')
                 motd_header = 'News!'
                 motd_buttons = ['Exit', 'Continue']
                 # Add update button if MOTD is flagged as an update notice
-                if 'u' in motd_lines[i][0].lower():
+                if 'u' in motd_data[i][0].lower():
                     motd_buttons.insert(0, 'View Update')
                     motd_header = 'Update available'
-                motd_continue = button_dialog(motd_header, motd_text, 
-                                              motd_buttons)
+
+                motd_continue = button_dialog(motd_header, motd_text,
+                                              tuple(motd_buttons))
                 if motd_continue == 'Exit':
                     exit_app()
                 elif motd_continue == 'View Update':
                     webbrowser.open('https://github.com/ClippyRoyale/\
-WorldConverter/releases/latest')
+SkinConverter/releases/latest')
+                    exit_app()
                 else: # Continue
                     return
     except Exception:
-        # If the internet isn't cooperating or the MOTD file is malformed, 
+        # If the internet isn't cooperating or the MOTD file is malformed,
         # no big deal, just skip it
         pass
 
@@ -1809,19 +1845,18 @@ def crash(exctype=None, excvalue=None, _=None):
         window.iconphoto(False, bomb)
     finally:
         # Tkinter doesn't have a "public" way to show the error dialog I want,
-        # but the options are hidden under the hood. 
+        # but the options are hidden under the hood.
         # Code based on Tkinter messagebox.py
-        btn = messagebox._show('Error', '''An error has occurred.
-%s: %s''' % (str(exctype)[8:-2], excvalue), 
+        btn = messagebox._show('Error', f'''An error has occurred.
+{str(exctype)[8:-2]}: {excvalue}''',
 messagebox.ERROR, messagebox.ABORTRETRYIGNORE)
         # btn might be a Tcl index object, so convert it to a string
         btn = str(btn)
-        if btn == 'ignore':
-            return
-        elif btn == 'retry':
-            menu()
-        else: # abort
+        if btn == 'abort':
             exit_app()
+        elif btn == 'retry':
+            setup()
+        # else ignore
 
 def exit_app():
     window.destroy()
@@ -1832,22 +1867,20 @@ try:
     # Comment out during development if you want crashes to be logged to the
     # console instead of displaying a bomb dialog
     window.report_callback_exception = crash
-    
+
     # Determine if we're running on replit
-    if os.path.isdir("/home/runner") == True:
+    if os.path.isdir("/home/runner") is True:
         # Ask user to enter fullscreen
-        messagebox.showinfo(window, 
-                message='''\
-Looks like you’re running the online (Replit) version of the world converter! 
+        messagebox.showinfo(message='''\
+Looks like you’re running the online (Replit) version of the world converter!
 You may want to enter fullscreen so you can click all the buttons.
-Click the ⋮ on the “Output” menu bar then click “Maximize”. 
+Click the ⋮ on the “Output” menu bar then click “Maximize”.
 If you’re on a phone, rotate it sideways, zoom out, \
 and hide your browser’s toolbar.''')
 
         # show online instructions
-        messagebox.showinfo(window, 
-        message='''Before converting your first file:
-1. Create a Replit account. You can use an existing Google or Github account.
+        messagebox.showinfo(message='''Before converting your first file:
+1. Create a Replit account. You can use an existing Google or GitHub account.
 2. Click “Fork Repl” and follow the instructions.
 3. In your newly-forked project, drag the world JSONs you want to convert \
 into the list of files in the left sidebar.''')
