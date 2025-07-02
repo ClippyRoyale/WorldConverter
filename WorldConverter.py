@@ -1802,7 +1802,7 @@ def motd():
     '''
 
     motd_url = 'https://raw.githubusercontent.com/ClippyRoyale/\
-SkinConverter/main/motd.txt'
+WorldConverter/main/motd.txt'
     try:
         # Download and read MOTD
         urllib.request.urlretrieve(motd_url, 'motd.txt')
@@ -1830,7 +1830,7 @@ SkinConverter/main/motd.txt'
                     exit_app()
                 elif motd_continue == 'View Update':
                     webbrowser.open('https://github.com/ClippyRoyale/\
-SkinConverter/releases/latest')
+WorldConverter/releases/latest')
                     exit_app()
                 else: # Continue
                     return
